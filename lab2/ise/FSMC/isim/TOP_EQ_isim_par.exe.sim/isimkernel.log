@@ -1,0 +1,12 @@
+Command line:
+   TOP_EQ_isim_par.exe
+     -simmode  gui
+     -sdfmax  /TOP_EQ/=netgen/par/TOP_EQ_timesim.sdf
+     -sdfroot  /
+     -simrunnum  0
+     -socket  3441
+
+Tue Nov 07 10:02:20 2017
+
+
+ Elaboration Time: 0.280801 sec

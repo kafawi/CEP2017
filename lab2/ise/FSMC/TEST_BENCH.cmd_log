@@ -1,0 +1,2 @@
+xst -intstyle ise -ifn "C:/Users/abs430/Documents/lab2/FSMC/TEST_BENCH.xst" -ofn "C:/Users/abs430/Documents/lab2/FSMC/TEST_BENCH.syr" 
+xst -intstyle ise -ifn "C:/Users/abs430/Documents/lab2/FSMC/TEST_BENCH.xst" -ofn "C:/Users/abs430/Documents/lab2/FSMC/TEST_BENCH.syr" 

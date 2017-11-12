@@ -1,0 +1,14 @@
+xst -intstyle ise -ifn "C:/Users/abs430/Documents/lab2/FSMC/TOP_EQ.xst" -ofn "C:/Users/abs430/Documents/lab2/FSMC/TOP_EQ.syr" 
+ngdbuild -intstyle ise -dd _ngo -nt timestamp -i -p xc6slx16-csg324-3 TOP_EQ.ngc TOP_EQ.ngd  
+map -intstyle ise -p xc6slx16-csg324-3 -w -logic_opt off -ol high -t 1 -xt 0 -register_duplication off -r 4 -global_opt off -mt off -ir off -pr off -lc off -power off -o TOP_EQ_map.ncd TOP_EQ.ngd TOP_EQ.pcf 
+par -w -intstyle ise -ol high -mt off TOP_EQ_map.ncd TOP_EQ.ncd TOP_EQ.pcf 
+trce -intstyle ise -v 3 -s 3 -n 3 -fastpaths -xml TOP_EQ.twx TOP_EQ.ncd -o TOP_EQ.twr TOP_EQ.pcf 
+netgen -intstyle ise -insert_glbl true -w -dir netgen/synthesis -ofmt verilog -sim TOP_EQ.ngc TOP_EQ_synthesis.v 
+netgen -intstyle ise -s 3  -pcf TOP_EQ.pcf -sdf_anno true -sdf_path "netgen/par" -insert_glbl true -insert_pp_buffers true -w -dir netgen/par -ofmt verilog -sim TOP_EQ.ncd TOP_EQ_timesim.v 
+netgen -intstyle ise -s 3  -pcf TOP_EQ.pcf -rpw 100 -tpw 0 -ar Structure -tm TOP_EQ -insert_pp_buffers true -w -dir netgen/par -ofmt vhdl -sim TOP_EQ.ncd TOP_EQ_timesim.vhd 
+xst -intstyle ise -ifn "C:/Users/abs430/Documents/lab2/FSMC/TOP_EQ.xst" -ofn "C:/Users/abs430/Documents/lab2/FSMC/TOP_EQ.syr" 
+ngdbuild -intstyle ise -dd _ngo -nt timestamp -i -p xc6slx16-csg324-3 TOP_EQ.ngc TOP_EQ.ngd  
+map -intstyle ise -p xc6slx16-csg324-3 -w -logic_opt off -ol high -t 1 -xt 0 -register_duplication off -r 4 -global_opt off -mt off -ir off -pr off -lc off -power off -o TOP_EQ_map.ncd TOP_EQ.ngd TOP_EQ.pcf 
+par -w -intstyle ise -ol high -mt off TOP_EQ_map.ncd TOP_EQ.ncd TOP_EQ.pcf 
+trce -intstyle ise -v 3 -s 3 -n 3 -fastpaths -xml TOP_EQ.twx TOP_EQ.ncd -o TOP_EQ.twr TOP_EQ.pcf 
+netgen -intstyle ise -s 3  -pcf TOP_EQ.pcf -rpw 100 -tpw 0 -ar Structure -tm TOP_EQ -insert_pp_buffers true -w -dir netgen/par -ofmt vhdl -sim TOP_EQ.ncd TOP_EQ_timesim.vhd 

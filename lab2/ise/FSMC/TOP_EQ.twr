@@ -1,0 +1,121 @@
+--------------------------------------------------------------------------------
+Release 14.7 Trace  (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+C:\Xilinx\14.7\ISE_DS\ISE\bin\nt64\unwrapped\trce.exe -intstyle ise -v 3 -s 3
+-n 3 -fastpaths -xml TOP_EQ.twx TOP_EQ.ncd -o TOP_EQ.twr TOP_EQ.pcf
+
+Design file:              TOP_EQ.ncd
+Physical constraint file: TOP_EQ.pcf
+Device,package,speed:     xc6slx16,csg324,C,-3 (PRODUCTION 1.23 2013-10-13)
+Report level:             verbose report
+
+Environment Variable      Effect 
+--------------------      ------ 
+NONE                      No environment variables were set
+--------------------------------------------------------------------------------
+
+INFO:Timing:2698 - No timing constraints found, doing default enumeration.
+INFO:Timing:3412 - To improve timing, see the Timing Closure User Guide (UG612).
+INFO:Timing:2752 - To get complete path coverage, use the unconstrained paths 
+   option. All paths that are not constrained will be reported in the 
+   unconstrained paths section(s) of the report.
+INFO:Timing:3339 - The clock-to-out numbers in this timing report are based on 
+   a 50 Ohm transmission line loading model.  For the details of this model, 
+   and for more information on accounting for different loading conditions, 
+   please see the device datasheet.
+
+
+
+Data Sheet report:
+-----------------
+All values displayed in nanoseconds (ns)
+
+Setup/Hold to clock CLK
+------------+------------+------------+------------+------------+------------------+--------+
+            |Max Setup to|  Process   |Max Hold to |  Process   |                  | Clock  |
+Source      | clk (edge) |   Corner   | clk (edge) |   Corner   |Internal Clock(s) | Phase  |
+------------+------------+------------+------------+------------+------------------+--------+
+DATA<0>     |    1.819(R)|      SLOW  |   -1.283(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<1>     |    1.867(R)|      SLOW  |   -1.280(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<2>     |    1.777(R)|      SLOW  |   -1.238(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<3>     |    1.830(R)|      SLOW  |   -1.265(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<4>     |    1.607(R)|      SLOW  |   -1.117(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<5>     |    1.858(R)|      SLOW  |   -1.294(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<6>     |    1.806(R)|      SLOW  |   -1.267(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<7>     |    1.769(R)|      SLOW  |   -1.216(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<8>     |    1.667(R)|      SLOW  |   -1.105(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<9>     |    2.180(R)|      SLOW  |   -1.447(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<10>    |    2.128(R)|      SLOW  |   -1.409(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<11>    |    1.786(R)|      SLOW  |   -1.184(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<12>    |    1.634(R)|      SLOW  |   -1.104(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<13>    |    1.914(R)|      SLOW  |   -1.331(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<14>    |    1.808(R)|      SLOW  |   -1.208(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<15>    |    1.850(R)|      SLOW  |   -1.246(R)|      FAST  |CLK_SYN           |   0.000|
+NE          |    2.121(R)|      SLOW  |   -1.504(R)|      FAST  |CLK_SYN           |   0.000|
+NOE         |    1.916(R)|      SLOW  |   -1.324(R)|      FAST  |CLK_SYN           |   0.000|
+NWE         |    1.961(R)|      SLOW  |   -1.368(R)|      FAST  |CLK_SYN           |   0.000|
+N_RESET     |    3.353(R)|      SLOW  |   -1.758(R)|      FAST  |CLK_PE            |   0.000|
+            |    3.624(R)|      SLOW  |   -1.885(R)|      FAST  |CLK_SYN           |   0.000|
+------------+------------+------------+------------+------------+------------------+--------+
+
+Clock CLK to Pad
+------------+-----------------+------------+-----------------+------------+------------------+--------+
+            |Max (slowest) clk|  Process   |Min (fastest) clk|  Process   |                  | Clock  |
+Destination |  (edge) to PAD  |   Corner   |  (edge) to PAD  |   Corner   |Internal Clock(s) | Phase  |
+------------+-----------------+------------+-----------------+------------+------------------+--------+
+DATA<0>     |         4.873(R)|      SLOW  |         2.744(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.507(R)|      SLOW  |         3.045(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<1>     |         5.073(R)|      SLOW  |         2.911(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.751(R)|      SLOW  |         3.225(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<2>     |         5.074(R)|      SLOW  |         2.912(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.751(R)|      SLOW  |         3.225(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<3>     |         4.849(R)|      SLOW  |         2.751(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.297(R)|      SLOW  |         2.949(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<4>     |         4.875(R)|      SLOW  |         2.765(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.297(R)|      SLOW  |         2.949(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<5>     |         5.043(R)|      SLOW  |         2.876(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.460(R)|      SLOW  |         3.036(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<6>     |         5.043(R)|      SLOW  |         2.876(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.460(R)|      SLOW  |         3.036(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<7>     |         5.056(R)|      SLOW  |         2.882(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.442(R)|      SLOW  |         3.059(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<8>     |         4.924(R)|      SLOW  |         2.795(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.442(R)|      SLOW  |         3.059(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<9>     |         5.288(R)|      SLOW  |         3.014(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.742(R)|      SLOW  |         3.207(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<10>    |         5.297(R)|      SLOW  |         2.984(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.742(R)|      SLOW  |         3.207(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<11>    |         5.166(R)|      SLOW  |         2.952(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.579(R)|      SLOW  |         3.158(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<12>    |         5.329(R)|      SLOW  |         3.053(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.573(R)|      SLOW  |         3.126(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<13>    |         5.482(R)|      SLOW  |         3.121(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.563(R)|      SLOW  |         3.092(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<14>    |         5.391(R)|      SLOW  |         3.109(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.598(R)|      SLOW  |         3.136(R)|      FAST  |CLK_SYN           |   0.000|
+DATA<15>    |         5.186(R)|      SLOW  |         2.968(R)|      FAST  |CLK_PE            |   0.000|
+            |         5.818(R)|      SLOW  |         3.257(R)|      FAST  |CLK_SYN           |   0.000|
+RDY         |         5.052(R)|      SLOW  |         2.849(R)|      FAST  |CLK_PE            |   0.000|
+------------+-----------------+------------+-----------------+------------+------------------+--------+
+
+Clock to Setup on destination clock CLK
+---------------+---------+---------+---------+---------+
+               | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock   |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+---------------+---------+---------+---------+---------+
+CLK            |    3.591|         |         |         |
+---------------+---------+---------+---------+---------+
+
+
+Analysis completed Tue Nov 07 10:02:03 2017 
+--------------------------------------------------------------------------------
+
+Trace Settings:
+-------------------------
+Trace Settings 
+
+Peak Memory Usage: 220 MB
+
+
+

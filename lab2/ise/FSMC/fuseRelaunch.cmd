@@ -1,0 +1,1 @@
+-intstyle "ise" -incremental -lib "secureip" -o "C:/Users/abs430/Documents/lab2/FSMC/TOP_EQ_isim_par.exe" -prj "C:/Users/abs430/Documents/lab2/FSMC/TOP_EQ_par.prj" "work.TOP_EQ" 

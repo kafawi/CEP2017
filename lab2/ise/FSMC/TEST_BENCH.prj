@@ -1,0 +1,4 @@
+vhdl work "../EQ_PE.vhd"
+vhdl work "../clk_wiz_v3_6.vhd"
+vhdl work "../TOP_EQ.vhd"
+vhdl work "../TEST_BENCH.vhd"

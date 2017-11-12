@@ -1,0 +1,520 @@
+Release 14.7 - xst P.20131013 (nt64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+--> Parameter TMPDIR set to xst/projnav.tmp
+
+
+Total REAL time to Xst completion: 0.00 secs
+Total CPU time to Xst completion: 0.34 secs
+ 
+--> Parameter xsthdpdir set to xst
+
+
+Total REAL time to Xst completion: 0.00 secs
+Total CPU time to Xst completion: 0.34 secs
+ 
+--> Reading design: TOP_EQ.prj
+
+TABLE OF CONTENTS
+  1) Synthesis Options Summary
+  2) HDL Parsing
+  3) HDL Elaboration
+  4) HDL Synthesis
+       4.1) HDL Synthesis Report
+  5) Advanced HDL Synthesis
+       5.1) Advanced HDL Synthesis Report
+  6) Low Level Synthesis
+  7) Partition Report
+  8) Design Summary
+       8.1) Primitive and Black Box Usage
+       8.2) Device utilization summary
+       8.3) Partition Resource Summary
+       8.4) Timing Report
+            8.4.1) Clock Information
+            8.4.2) Asynchronous Control Signals Information
+            8.4.3) Timing Summary
+            8.4.4) Timing Details
+            8.4.5) Cross Clock Domains Report
+
+
+=========================================================================
+*                      Synthesis Options Summary                        *
+=========================================================================
+---- Source Parameters
+Input File Name                    : "TOP_EQ.prj"
+Ignore Synthesis Constraint File   : NO
+
+---- Target Parameters
+Output File Name                   : "TOP_EQ"
+Output Format                      : NGC
+Target Device                      : xc6slx16-3-csg324
+
+---- Source Options
+Top Module Name                    : TOP_EQ
+Automatic FSM Extraction           : YES
+FSM Encoding Algorithm             : Auto
+Safe Implementation                : No
+FSM Style                          : LUT
+RAM Extraction                     : Yes
+RAM Style                          : Auto
+ROM Extraction                     : Yes
+Shift Register Extraction          : YES
+ROM Style                          : Auto
+Resource Sharing                   : YES
+Asynchronous To Synchronous        : NO
+Shift Register Minimum Size        : 2
+Use DSP Block                      : Auto
+Automatic Register Balancing       : No
+
+---- Target Options
+LUT Combining                      : Auto
+Reduce Control Sets                : Auto
+Add IO Buffers                     : YES
+Global Maximum Fanout              : 100000
+Add Generic Clock Buffer(BUFG)     : 16
+Register Duplication               : YES
+Optimize Instantiated Primitives   : NO
+Use Clock Enable                   : Auto
+Use Synchronous Set                : Auto
+Use Synchronous Reset              : Auto
+Pack IO Registers into IOBs        : Auto
+Equivalent register Removal        : YES
+
+---- General Options
+Optimization Goal                  : Speed
+Optimization Effort                : 1
+Power Reduction                    : NO
+Keep Hierarchy                     : No
+Netlist Hierarchy                  : As_Optimized
+RTL Output                         : Yes
+Global Optimization                : AllClockNets
+Read Cores                         : YES
+Write Timing Constraints           : NO
+Cross Clock Analysis               : NO
+Hierarchy Separator                : /
+Bus Delimiter                      : <>
+Case Specifier                     : Maintain
+Slice Utilization Ratio            : 100
+BRAM Utilization Ratio             : 100
+DSP48 Utilization Ratio            : 100
+Auto BRAM Packing                  : NO
+Slice Utilization Ratio Delta      : 5
+
+=========================================================================
+
+
+=========================================================================
+*                          HDL Parsing                                  *
+=========================================================================
+Parsing VHDL file "C:\Users\abs430\Documents\lab2\EQ_PE.vhd" into library work
+Parsing entity <EQ_PE>.
+Parsing architecture <BEH> of entity <eq_pe>.
+Parsing VHDL file "C:\Users\abs430\Documents\lab2\clk_wiz_v3_6.vhd" into library work
+Parsing entity <clk_wiz_v3_6>.
+Parsing architecture <xilinx> of entity <clk_wiz_v3_6>.
+Parsing VHDL file "C:\Users\abs430\Documents\lab2\TOP_EQ.vhd" into library work
+Parsing entity <TOP_EQ>.
+Parsing architecture <BEHAV> of entity <top_eq>.
+
+=========================================================================
+*                            HDL Elaboration                            *
+=========================================================================
+
+Elaborating entity <TOP_EQ> (architecture <BEHAV>) from library <work>.
+
+Elaborating entity <EQ_PE> (architecture <BEH>) with generics from library <work>.
+
+Elaborating entity <clk_wiz_v3_6> (architecture <xilinx>) from library <work>.
+
+=========================================================================
+*                           HDL Synthesis                               *
+=========================================================================
+
+Synthesizing Unit <TOP_EQ>.
+    Related source file is "C:\Users\abs430\Documents\lab2\TOP_EQ.vhd".
+    Found 1-bit register for signal <Q_PST>.
+    Found 2-bit register for signal <NE_SYN>.
+    Found 2-bit register for signal <NOE_SYN>.
+    Found 32-bit register for signal <D_SYN>.
+    Found 1-bit register for signal <EN>.
+    Found 16-bit register for signal <Y>.
+    Found 1-bit register for signal <START>.
+    Found 3-bit register for signal <NWE_SYN>.
+    Found 1-bit tristate buffer for signal <DATA<15>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<14>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<13>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<12>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<11>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<10>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<9>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<8>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<7>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<6>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<5>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<4>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<3>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<2>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<1>> created at line 138
+    Found 1-bit tristate buffer for signal <DATA<0>> created at line 138
+    Summary:
+	inferred  58 D-type flip-flop(s).
+	inferred  16 Tristate(s).
+Unit <TOP_EQ> synthesized.
+
+Synthesizing Unit <EQ_PE>.
+    Related source file is "C:\Users\abs430\Documents\lab2\EQ_PE.vhd".
+        ACCU_LIMIT = 8128
+    Found 16-bit register for signal <QINT>.
+    Found 1-bit register for signal <RDY>.
+    Found 16-bit adder for signal <QINT[15]_Y[15]_add_2_OUT> created at line 39.
+    Summary:
+	inferred   1 Adder/Subtractor(s).
+	inferred  17 D-type flip-flop(s).
+	inferred   1 Multiplexer(s).
+Unit <EQ_PE> synthesized.
+
+Synthesizing Unit <clk_wiz_v3_6>.
+    Related source file is "C:\Users\abs430\Documents\lab2\clk_wiz_v3_6.vhd".
+    Summary:
+	no macro.
+Unit <clk_wiz_v3_6> synthesized.
+
+=========================================================================
+HDL Synthesis Report
+
+Macro Statistics
+# Adders/Subtractors                                   : 1
+ 16-bit adder                                          : 1
+# Registers                                            : 10
+ 1-bit register                                        : 4
+ 16-bit register                                       : 2
+ 2-bit register                                        : 2
+ 3-bit register                                        : 1
+ 32-bit register                                       : 1
+# Multiplexers                                         : 1
+ 16-bit 2-to-1 multiplexer                             : 1
+# Tristates                                            : 16
+ 1-bit tristate buffer                                 : 16
+
+=========================================================================
+
+=========================================================================
+*                       Advanced HDL Synthesis                          *
+=========================================================================
+
+
+Synthesizing (advanced) Unit <EQ_PE>.
+The following registers are absorbed into accumulator <QINT>: 1 register on signal <QINT>.
+Unit <EQ_PE> synthesized (advanced).
+
+=========================================================================
+Advanced HDL Synthesis Report
+
+Macro Statistics
+# Accumulators                                         : 1
+ 16-bit up loadable accumulator                        : 1
+# Registers                                            : 59
+ Flip-Flops                                            : 59
+
+=========================================================================
+
+=========================================================================
+*                         Low Level Synthesis                           *
+=========================================================================
+INFO:Xst:1901 - Instance CLK_GEN/pll_base_inst in unit CLK_GEN/pll_base_inst of type PLL_BASE has been replaced by PLL_ADV
+
+Optimizing unit <TOP_EQ> ...
+
+Mapping all equations...
+Building and optimizing final netlist ...
+Found area constraint ratio of 100 (+ 5) on block TOP_EQ, actual ratio is 1.
+
+Final Macro Processing ...
+
+=========================================================================
+Final Register Report
+
+Macro Statistics
+# Registers                                            : 75
+ Flip-Flops                                            : 75
+
+=========================================================================
+
+=========================================================================
+*                           Partition Report                            *
+=========================================================================
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+=========================================================================
+*                            Design Summary                             *
+=========================================================================
+
+Top Level Output File Name         : TOP_EQ.ngc
+
+Primitive and Black Box Usage:
+------------------------------
+# BELS                             : 73
+#      GND                         : 1
+#      LUT2                        : 19
+#      LUT3                        : 17
+#      LUT6                        : 4
+#      MUXCY                       : 15
+#      VCC                         : 1
+#      XORCY                       : 16
+# FlipFlops/Latches                : 75
+#      FDC                         : 42
+#      FDCE                        : 32
+#      FDE                         : 1
+# Clock Buffers                    : 3
+#      BUFG                        : 3
+# IO Buffers                       : 23
+#      IBUF                        : 4
+#      IBUFG                       : 1
+#      IOBUF                       : 16
+#      OBUF                        : 2
+# Others                           : 1
+#      PLL_ADV                     : 1
+
+Device utilization summary:
+---------------------------
+
+Selected Device : 6slx16csg324-3 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:              75  out of  18224     0%  
+ Number of Slice LUTs:                   40  out of   9112     0%  
+    Number used as Logic:                40  out of   9112     0%  
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:     95
+   Number with an unused Flip Flop:      20  out of     95    21%  
+   Number with an unused LUT:            55  out of     95    57%  
+   Number of fully used LUT-FF pairs:    20  out of     95    21%  
+   Number of unique control sets:         6
+
+IO Utilization: 
+ Number of IOs:                          23
+ Number of bonded IOBs:                  23  out of    232     9%  
+
+Specific Feature Utilization:
+ Number of BUFG/BUFGCTRLs:                3  out of     16    18%  
+ Number of PLL_ADVs:                      1  out of      2    50%  
+
+---------------------------
+Partition Resource Summary:
+---------------------------
+
+  No Partitions were found in this design.
+
+---------------------------
+
+
+=========================================================================
+Timing Report
+
+NOTE: THESE TIMING NUMBERS ARE ONLY A SYNTHESIS ESTIMATE.
+      FOR ACCURATE TIMING INFORMATION PLEASE REFER TO THE TRACE REPORT
+      GENERATED AFTER PLACE-and-ROUTE.
+
+Clock Information:
+------------------
+-----------------------------------+------------------------+-------+
+Clock Signal                       | Clock buffer(FF name)  | Load  |
+-----------------------------------+------------------------+-------+
+CLK_GEN/pll_base_inst/CLKOUT1      | BUFG                   | 56    |
+EN                                 | NONE(Q_PST)            | 1     |
+CLK_GEN/pll_base_inst/CLKOUT0      | BUFG                   | 18    |
+-----------------------------------+------------------------+-------+
+INFO:Xst:2169 - HDL ADVISOR - Some clock signals were not automatically buffered by XST with BUFG/BUFR resources. Please use the buffer_type constraint in order to insert these buffers to the clock signals to help prevent skew problems.
+
+Asynchronous Control Signals Information:
+----------------------------------------
+No asynchronous control signals found in this design
+
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 3.948ns (Maximum Frequency: 253.315MHz)
+   Minimum input arrival time before clock: 4.173ns
+   Maximum output required time after clock: 4.946ns
+   Maximum combinational path delay: No path found
+
+Timing Details:
+---------------
+All values displayed in nanoseconds (ns)
+
+=========================================================================
+Timing constraint: Default period analysis for Clock 'CLK_GEN/pll_base_inst/CLKOUT1'
+  Clock period: 1.796ns (frequency: 556.855MHz)
+  Total number of paths / destination ports: 55 / 53
+-------------------------------------------------------------------------
+Delay:               1.796ns (Levels of Logic = 0)
+  Source:            EN (FF)
+  Destination:       Y_0 (FF)
+  Source Clock:      CLK_GEN/pll_base_inst/CLKOUT1 rising
+  Destination Clock: CLK_GEN/pll_base_inst/CLKOUT1 rising
+
+  Data Path: EN to Y_0
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDC:C->Q             17   0.447   1.027  EN (EN)
+     FDCE:CE                   0.322          Y_0
+    ----------------------------------------
+    Total                      1.796ns (0.769ns logic, 1.027ns route)
+                                       (42.8% logic, 57.2% route)
+
+=========================================================================
+Timing constraint: Default period analysis for Clock 'CLK_GEN/pll_base_inst/CLKOUT0'
+  Clock period: 3.948ns (frequency: 253.315MHz)
+  Total number of paths / destination ports: 800 / 33
+-------------------------------------------------------------------------
+Delay:               3.948ns (Levels of Logic = 2)
+  Source:            EQ_PE_I/QINT_1 (FF)
+  Destination:       EQ_PE_I/QINT_15 (FF)
+  Source Clock:      CLK_GEN/pll_base_inst/CLKOUT0 rising
+  Destination Clock: CLK_GEN/pll_base_inst/CLKOUT0 rising
+
+  Data Path: EQ_PE_I/QINT_1 to EQ_PE_I/QINT_15
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDCE:C->Q             4   0.447   1.048  EQ_PE_I/QINT_1 (EQ_PE_I/QINT_1)
+     LUT6:I0->O            2   0.203   0.721  EQ_PE_I/GND_6_o_GND_6_o_equal_1_o<15>2 (EQ_PE_I/GND_6_o_GND_6_o_equal_1_o<15>1)
+     LUT6:I4->O           16   0.203   1.004  EQ_PE_I/_n0025_inv1 (EQ_PE_I/_n0025_inv)
+     FDCE:CE                   0.322          EQ_PE_I/QINT_15
+    ----------------------------------------
+    Total                      3.948ns (1.175ns logic, 2.773ns route)
+                                       (29.8% logic, 70.2% route)
+
+=========================================================================
+Timing constraint: Default OFFSET IN BEFORE for Clock 'CLK_GEN/pll_base_inst/CLKOUT1'
+  Total number of paths / destination ports: 75 / 75
+-------------------------------------------------------------------------
+Offset:              4.173ns (Levels of Logic = 2)
+  Source:            N_RESET (PAD)
+  Destination:       NE_SYN_0 (FF)
+  Destination Clock: CLK_GEN/pll_base_inst/CLKOUT1 rising
+
+  Data Path: N_RESET to NE_SYN_0
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     IBUF:I->O             2   1.222   0.617  N_RESET_IBUF (N_RESET_IBUF)
+     LUT2:I1->O           73   0.205   1.699  NRESET_I_inv1 (NRESET_I_inv)
+     FDC:CLR                   0.430          NE_SYN_0
+    ----------------------------------------
+    Total                      4.173ns (1.857ns logic, 2.316ns route)
+                                       (44.5% logic, 55.5% route)
+
+=========================================================================
+Timing constraint: Default OFFSET IN BEFORE for Clock 'CLK_GEN/pll_base_inst/CLKOUT0'
+  Total number of paths / destination ports: 18 / 18
+-------------------------------------------------------------------------
+Offset:              4.173ns (Levels of Logic = 2)
+  Source:            N_RESET (PAD)
+  Destination:       START (FF)
+  Destination Clock: CLK_GEN/pll_base_inst/CLKOUT0 rising
+
+  Data Path: N_RESET to START
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     IBUF:I->O             2   1.222   0.617  N_RESET_IBUF (N_RESET_IBUF)
+     LUT2:I1->O           73   0.205   1.699  NRESET_I_inv1 (NRESET_I_inv)
+     FDC:CLR                   0.430          START
+    ----------------------------------------
+    Total                      4.173ns (1.857ns logic, 2.316ns route)
+                                       (44.5% logic, 55.5% route)
+
+=========================================================================
+Timing constraint: Default OFFSET OUT AFTER for Clock 'CLK_GEN/pll_base_inst/CLKOUT0'
+  Total number of paths / destination ports: 17 / 17
+-------------------------------------------------------------------------
+Offset:              3.732ns (Levels of Logic = 1)
+  Source:            EQ_PE_I/QINT_14 (FF)
+  Destination:       DATA<14> (PAD)
+  Source Clock:      CLK_GEN/pll_base_inst/CLKOUT0 rising
+
+  Data Path: EQ_PE_I/QINT_14 to DATA<14>
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDCE:C->Q             5   0.447   0.714  EQ_PE_I/QINT_14 (EQ_PE_I/QINT_14)
+     IOBUF:I->IO               2.571          DATA_14_IOBUF (DATA<14>)
+    ----------------------------------------
+    Total                      3.732ns (3.018ns logic, 0.714ns route)
+                                       (80.9% logic, 19.1% route)
+
+=========================================================================
+Timing constraint: Default OFFSET OUT AFTER for Clock 'CLK_GEN/pll_base_inst/CLKOUT1'
+  Total number of paths / destination ports: 32 / 16
+-------------------------------------------------------------------------
+Offset:              4.946ns (Levels of Logic = 2)
+  Source:            NE_SYN_0 (FF)
+  Destination:       DATA<15> (PAD)
+  Source Clock:      CLK_GEN/pll_base_inst/CLKOUT1 rising
+
+  Data Path: NE_SYN_0 to DATA<15>
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDC:C->Q              2   0.447   0.721  NE_SYN_0 (NE_SYN_0)
+     LUT2:I0->O           16   0.203   1.004  TRISTATE1 (TRISTATE)
+     IOBUF:T->IO               2.571          DATA_15_IOBUF (DATA<15>)
+    ----------------------------------------
+    Total                      4.946ns (3.221ns logic, 1.725ns route)
+                                       (65.1% logic, 34.9% route)
+
+=========================================================================
+
+Cross Clock Domains Report:
+--------------------------
+
+Clock to Setup on destination clock CLK_GEN/pll_base_inst/CLKOUT0
+-----------------------------+---------+---------+---------+---------+
+                             | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock                 |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+-----------------------------+---------+---------+---------+---------+
+CLK_GEN/pll_base_inst/CLKOUT0|    3.948|         |         |         |
+CLK_GEN/pll_base_inst/CLKOUT1|    1.952|         |         |         |
+EN                           |    1.128|         |         |         |
+-----------------------------+---------+---------+---------+---------+
+
+Clock to Setup on destination clock CLK_GEN/pll_base_inst/CLKOUT1
+-----------------------------+---------+---------+---------+---------+
+                             | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock                 |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+-----------------------------+---------+---------+---------+---------+
+CLK_GEN/pll_base_inst/CLKOUT1|    1.796|         |         |         |
+-----------------------------+---------+---------+---------+---------+
+
+Clock to Setup on destination clock EN
+-----------------------------+---------+---------+---------+---------+
+                             | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock                 |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+-----------------------------+---------+---------+---------+---------+
+CLK_GEN/pll_base_inst/CLKOUT0|    2.182|         |         |         |
+-----------------------------+---------+---------+---------+---------+
+
+=========================================================================
+
+
+Total REAL time to Xst completion: 4.00 secs
+Total CPU time to Xst completion: 4.10 secs
+ 
+--> 
+
+Total memory usage is 273152 kilobytes
+
+Number of errors   :    0 (   0 filtered)
+Number of warnings :    0 (   0 filtered)
+Number of infos    :    2 (   0 filtered)
+
