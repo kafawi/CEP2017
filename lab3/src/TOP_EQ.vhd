@@ -73,8 +73,8 @@ port map(
    W => W
 );
 
---CLK_GEN:entity work.clk_wiz_v3_6(BEHAVE) -- vhdl sim 
-CLK_GEN: entity work.clk_wiz_v3_6(xilinx) -- timing sim
+CLK_GEN: entity work.clk_wiz_v3_6(BEHAVE) -- vhdl sim 
+--CLK_GEN: entity work.clk_wiz_v3_6(xilinx) -- timing sim
 port map(
    CLK_IN1 => CLK,
    CLK_OUT1 => CLK_PE,

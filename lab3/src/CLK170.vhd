@@ -6,7 +6,8 @@ use IEEE.std_logic_unsigned.all;
 entity clk_wiz_v3_6 is 
 generic(
     PERIODE350MHZHALBE: time:=1.42857142 ns; -- CLK_SYN
-    PERIODE150MHZHALBE: time:=3.33333333 ns  -- CLK_PE
+--    PERIODE150MHZHALBE: time:=3.33333333 ns  -- CLK_PE
+    PERIODE175MHZ: time:=5.7142857142857 ns  -- CLK_PE
 );
 port(
       CLK_IN1           : in     std_logic;
@@ -33,8 +34,10 @@ end process;
 
 CLK2_P: process
 begin
-	CLK_OUT2<='0'; wait for PERIODE150MHZHALBE;
-	CLK_OUT2<='1'; wait for PERIODE150MHZHALBE;
+--	CLK_OUT2<='0'; wait for PERIODE150MHZHALBE;
+--	CLK_OUT2<='1'; wait for PERIODE150MHZHALBE;
+CLK_OUT2<='0'; wait for PERIODE175MHZ/2;
+CLK_OUT2<='1'; wait for PERIODE175MHZ/2;
 end process;
 
 end BEHAVE;

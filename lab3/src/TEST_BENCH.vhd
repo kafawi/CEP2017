@@ -4,11 +4,12 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use ieee.math_real.all;
 
 entity TEST_BENCH is				-- keine externen Signale
 generic(
     HCLK   : time:=5.8823529411765 ns; -- 170MHz
-	SAMPLES: positive:= 128
+	  STIMULI_MAX: positive:= 32768
 );
 end  TEST_BENCH;
 
@@ -42,8 +43,8 @@ signal DATA_INT : integer := 0;
 signal PASSED : std_logic := '0'; 
 
 begin
-DUT: entity work.TOP_EQ(Structure) -- timing sim
---DUT: entity work.TOP_EQ(BEHAV) -- vhdl sim
+--DUT: entity work.TOP_EQ(Structure) -- timing sim
+DUT: entity work.TOP_EQ(BEHAV) -- vhdl sim
 port map(
     CLK => CLK25,
     N_RESET => N_RESET,
@@ -62,7 +63,7 @@ begin
 end process;
 -- MODE 1
 TSEQ : process
-  variable NUM: integer range 0 to SAMPLES + 2;
+  variable NUM: integer range -STIMULI_MAX to STIMULI_MAX;
 begin
 
   N_RESET <= '0';
@@ -75,7 +76,7 @@ begin
   DATA <= (others => 'Z');
   NUM := 0;
   wait for (HCLK *4);
-  while NUM <= SAMPLES +1 loop
+  while NUM <= STIMULI_MAX  loop
     -- wait for locked
     if LOCKED_I = '0' then
       wait until LOCKED_I = '1';
@@ -93,7 +94,8 @@ begin
     wait for (HCLK); -- +1
     NE <= '1';  
     DATA <= (others => 'Z');
-    wait for (HCLK); -- pass some time between read and write
+
+    wait until RDY = '1' ; -- pass some time between read and write
     -- READ
     -- -- ADDSET+1
     NE <= '0';
@@ -104,11 +106,11 @@ begin
     wait for (HCLK *2);
     NOE <= '1'; -- disable read;
     NE <= '1';
-	DATA_VALUE <=  DATA; -- read
+	  DATA_VALUE <=  DATA; -- read
     wait for (HCLK);  -- pass some time between read and write
 
-    -- COMPARE
-    GAUSS <= (NUM*NUM+NUM)/2;
+    -- COMPARE CHECK
+    GAUSS <= 1;--to_integer(to_real(sqrt(NUM)));
     DATA_INT <= to_integer(unsigned(DATA_VALUE));
     if GAUSS = DATA_INT then
       PASSED <= '1';
