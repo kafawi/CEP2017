@@ -55,9 +55,10 @@ signal DECR :  std_logic_vector(MSB/4 downto 0):=(others => '0');
 
 begin
 
--- connecstion port bus
+-- connection port bus
 Q <= "00000000" & REGQ;
 CMP_LOOP <= CMP_LOOP_I;
+CMP_UPDA <= CMP_UPDA_I;
 CMP_UPDA <= CMP_UPDA_I;
 
 -- REGISTER
@@ -67,7 +68,11 @@ begin
       REGQ <= (others => '0') after 1 ns;
    elsif (CLK'event and CLK = '1') then
       if (ENQ = '1') then
-         REGQ <= Q_P after 1 ns;
+         if (SELQ = '0') then
+             REGQ <= (others => '0') after 1 ns;
+         else
+             REGQ <= ADD(MSB/2 downto 0) after 1 ns;
+         end if;
       end if;
    end if;
 end process;
@@ -78,7 +83,11 @@ begin
       REGR <= (others => '0') after 1 ns;
    elsif (CLK'event and CLK = '1') then
       if (ENR = '1') then
-         REGR <= R_P after 1 ns;
+         if (SELR = '0') then
+            REGR <= D after 1 ns;
+         else
+            REGR <= SUB after 1 ns;
+         end if;
       end if;
    end if;
 end process;
@@ -89,7 +98,11 @@ begin
       REGN <= (others => '0') after 1 ns;
    elsif (CLK'event and CLK = '1') then
       if (ENN = '1') then
-         REGN <= N_P after 1 ns;
+         if (SELN = '0') then
+            REGN <= N_MAX after 1 ns;
+         else
+            REGN <= DECR after 1 ns;
+         end if;
       end if;
    end if;
 end process;
@@ -107,7 +120,7 @@ end process;
 -- COMPARE
 CMP_LOOP_P: process (REGN)
 begin
-  if (REGN = 0) then
+  if (REGN > 0) then
       CMP_LOOP_I <= '1' after 1 ns;
   else
       CMP_LOOP_I <= '0' after 1 ns;
@@ -123,9 +136,9 @@ variable TMP: std_logic_vector(MSB downto 0);
 begin
   TMP := "0000000" & REGT;
   if (RS >=TMP) then
-     CMP_UPDA <= '1' after 1 ns;
+     CMP_UPDA_I <= '1' after 1 ns;
   else
-     CMP_UPDA <= '0' after 1 ns;
+     CMP_UPDA_I <= '0' after 1 ns;
   end if;
 end process;
 -- shifter 
@@ -189,44 +202,7 @@ DECREMENTER: process(REGN)
 begin
    DECR <= REGN - 1 after 1 ns;
 end process;
--- Register MUXES
-Q_MUX: process(SELQ, ADD)
-begin
-  if (SELQ = '0') then
-     Q_P <= (others => '0') after 1 ns;
-  elsif (SELQ = '1') then
-     Q_P <= ADD(MSB downto 0) after 1 ns;
-  end if;
-end process;
-
-R_MUX: process(SELR, SUB)
-begin
-   if (SELR = '0') then
-      R_P <= D after 1 ns;
-   elsif (SELR = '1') then
-      R_P <= SUB after 1 ns;
-   end if;
-end process;
-
-N_MUX: process(SELN, DECR)
-begin
-   if (SELN = '0') then
-      N_P <= N_MAX after 1 ns;
-   elsif (SELN = '1') then
-      N_P <= DECR after 1 ns;
-   end if;
-end process;
-
--- T_MUX: process(SELT, ADD)
--- T does not need a mux
-
-
-
-
-
-
-
-
-
+-- Register MUXES 
+-- fast fix: Put MUX into register!
 
 end architecture BEH;

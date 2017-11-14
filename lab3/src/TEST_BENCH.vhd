@@ -9,7 +9,8 @@ use ieee.math_real.all;
 entity TEST_BENCH is				-- keine externen Signale
 generic(
     HCLK   : time:=5.8823529411765 ns; -- 170MHz
-	  STIMULI_MAX: positive:= 32768
+	  STIMULI_MAX: integer:= 32768;
+    STIMULI_MIN: integer:= -32768
 );
 end  TEST_BENCH;
 
@@ -63,7 +64,7 @@ begin
 end process;
 -- MODE 1
 TSEQ : process
-  variable NUM: integer range -STIMULI_MAX to STIMULI_MAX;
+  variable NUM: integer range STIMULI_MIN to STIMULI_MAX;
 begin
 
   N_RESET <= '0';
@@ -74,7 +75,6 @@ begin
   N_RESET <= '1';
   NE <= '1'; NOE <= '1'; NWE <= '1';
   DATA <= (others => 'Z');
-  NUM := 0;
   wait for (HCLK *4);
   while NUM <= STIMULI_MAX  loop
     -- wait for locked
