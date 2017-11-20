@@ -1,3 +1,6 @@
+#include <stm32f4xx.h>		
+#include <stm32f4xx_rcc.h>		
+#include <stm32f4xx_gpio.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
@@ -67,13 +70,13 @@ int main()
     TIM8->CR1  = TIM_CR1_CEN | TIM_CR1_ARPE; // TIM_ARR is bufferd
 
     // PA4 = DAC1 port (Mode_AN : analog)
-    GPIOA->MODER = (GPIOA->MODER & ~(GPIO_MODE_AN << (4*2))) | (GPIO_Mode_AN << (4 *2));
+    GPIOA->MODER = (GPIOA->MODER & ~(GPIO_Mode_AN << (4*2))) | (GPIO_Mode_AN << (4 *2));
     DAC->CR = DAC_CR_BOFF1 | DAC_CR_EN1;  // out buffer enable, to analog channel
 
 
 
     // enable BUS for BUTTON
-    RCC->APB2ENR |= APB2ENR_SYSCFGEN;  // bus/clk for SYSCFG
+    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;  // bus/clk for SYSCFG
     SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~0xf)| 5; // PF 8,7,6 are avalable
                              // external interrupt configuration register (2)
                              // port F  (das ist magie, warum funktioniert das?)
@@ -168,8 +171,7 @@ double tri(double t){
         x = modf(x, &intpart) + 1;
     }
     // -> (-1,1) ; f(t) *2 -1;
-    double y = 2*(1 - fabs(x))-1;
-    return y;
+    return 2*(1 - fabs(x))-1;
 }
 void sigarr_init(void){
     int i=0;
