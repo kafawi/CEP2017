@@ -1,10 +1,13 @@
 #include <stm32f4xx.h>		
 #include <stm32f4xx_rcc.h>		
-#include <stm32f4xx_gpio.h>
+//#include <stm32f4xx_gpio.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#include "CE_Lib.h" // initCEBOARD
+#include "tft.h"
 
 // fct declaration
 double tri(double t);
@@ -20,47 +23,52 @@ void TIM_delay_init(void);
 void TIM_delay_us(uint32_t t_us);
 // helpers
 char *int2Bin(char* out, int x, int width);
+void display_status(void);
 
 
 
 // constants
 #define PI 3.14159265359
-#define N_1_MAX 4
-#define N_2_MAX 100
-#define N1_STEP 1;
-#define N2_STEP 10;
-#define ARRLEN 100
-// for counter
+// F_out = 44kHz 
+#define ARRLEN 100 
+#define N1_STEP 1 // 440Hz  =  F_out/(ARRLEN/1)  
+#define N2_STEP 10 // 4.4kHz = F_out/(ARRLEN/10)
+
+// for counter HCLK = 168MHz -> HCLK / F_out = 38181 =~ 38 * 100
 #define PSCCNT 38
 #define ARRCNT 100
-#define PIN_LED (1<<7) //PI7
+// Output status pins 
+#define PIN_LED_FREQ (1<<6) // PI6
+#define PIN_LED_TYPE (1<<7) // PI7
 
-// global varsi
-uint16_t n_step = N1_STEP;
-uint32_t cycles_times_us;
+// global var
+uint32_t cycles_times_us; // for waiting in IRQ (anti prell)
+uint16_t n_step = N1_STEP; 
 int16_t sigarr_tri[ARRLEN];
 int16_t sigarr_sin[ARRLEN];
 volatile enum wave_type {SINUS, TRIANGLE} wave_t = SINUS;
-volatile enum wave_freq {MHZ} wave_f = MHZ;
+volatile enum wave_freq {F1,F2} wave_f = F1;
+
+// FOR DISPLAY OUTPUT in main loop
+volatile int stype_idx = 0, sfreq_idx = 0; 
 
 // macros
 #define INT16_2_UINT(x) ((x + INT16_MAX+1)>>4)
-#define OARRLEN 16
+
 int main()
 {
-    int i = 0;
-    printf("Hello, World!\n");
+    printf("CEP lab 4 -> interrupt, timer, DAC!\n");
     sigarr_init();
-
+    initCEP_Board();
     TIM_delay_init();
 
     // TIMER
-    // enable BUS for TIMER and DAC
-    RCC->APB2ENR |= RCC_APB2ENR_TIM8EN; // bus APB2 for TIM8 enable
-    RCC->APB1ENR |= RCC_APB1ENR_DACEN;  // bus APB1 for DAC enableGPIO
+    // enable BRIGE/CLK for TIMER and DAC
+    RCC->APB2ENR |= RCC_APB2ENR_TIM8EN; // clk/bus APB2 for TIM8 enable
+    RCC->APB1ENR |= RCC_APB1ENR_DACEN;  // clk/bus APB1 for DAC enableGPIO
     TIM8->CR1 = 0;
     TIM8->CR2 = 0;
-    // set TIMER via CNT
+    // set TIMER via CNT  f_dst = 44kHz, f_src = 168MHz -> CNT = 168M/44k = 38181.818 -> 38*100
     TIM8->PSC = PSCCNT -1; // PreSCaler : HCLK (168MHz) / 38 = 4421 kHz ( T = 226ns )
     TIM8->ARR = ARRCNT -1; // AutoReloadRegister : 4421 kHz / 100 = 44210 Hz (fast audio)
     NVIC_SetPriorityGrouping(5);
@@ -73,35 +81,26 @@ int main()
     GPIOA->MODER = (GPIOA->MODER & ~(GPIO_Mode_AN << (4*2))) | (GPIO_Mode_AN << (4 *2));
     DAC->CR = DAC_CR_BOFF1 | DAC_CR_EN1;  // out buffer enable, to analog channel
 
-
-
     // enable BUS for BUTTON
-    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;  // bus/clk for SYSCFG
+    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;  // bridge/clk for SYSCFG
     SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~0xf)| 5; // PF 8,7,6 are avalable
                              // external interrupt configuration register (2)
                              // port F  (das ist magie, warum funktioniert das?)
-                             // whay 5
-    EXTI->FTSR |= EXTI_FTSR_TR8; // Trigger falling edge  on line 8 (1<<8)
-    EXTI->IMR  |= EXTI_IMR_MR8;  // enable Interrupt (mask register on line 8)
+                             //  5 = 0b0101 means PF
+    // see cap 9.2.5 for more details ~0xf (0xfff0) EXTI(11 10 9 8)-> EXTI8 -> PF -> PF8
+    // we also want to enable PF 7 for, so we need EXTICR2 -> [1] -> (7 6 5 4)
+    SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] & ~0xf000)| 5; 
+    // we have to distinguish in IRQ EXT9_5_IRQHandler with reading gpioF
+    //EXTI->FTSR |= EXTI_FTSR_TR8; // Trigger falling edge  on line 8 (1<<8) // and line 7 is that possible
+    //EXTI->IMR  |= EXTI_IMR_MR8;  // enable Interrupt (mask register on line 8)
+    EXTI->FTSR |= (EXTI_FTSR_TR8 | EXTI_FTSR_TR7);
+    EXTI->IMR  |= (EXTI_IMR_MR8 | EXTI_IMR_MR7);
+    //
     NVIC_SetPriority(EXTI9_5_IRQn, 2);
     NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-    /*
-    char iArr[OARRLEN] = {0};
-    char oArr[OARRLEN] = {0};
-
-    printf("max %d : min %d\n", INT16_MAX, UINT16_MAX);
-    // check arrays
-    for(i = 0; i < ARRLEN; i++)
-    {
-        printf("%6d - %6d : %4d - %4d \n",
-               sigarr_sin[i], sigarr_tri[i],
-               INT16_2_UINT(sigarr_sin[i]), INT16_2_UINT(sigarr_tri[i]));
-    }
-     */
-    while(1){};
-    return 0;
-
+    while(1){
+        display_status();
+    };
 }
 // TIMER ----------------------------------------------------------------------
 void TIM_delay_init(void)
@@ -121,8 +120,17 @@ void TIM_delay_us(uint32_t t_us)
 void TIM8_UP_TIM13_IRQHandler(void)
 {
     static uint16_t idx = 0;
+    static uint16_t n_step = N1_STEP;
     TIM8->SR = ~TIM_SR_UIF; // UPDATE IRQ with 0 : 1 no effect
                             // Update_Interrupt_Flag
+    switch(wave_f){
+        case F1:
+            n_step = N1_STEP;
+            break;
+        case F2:
+            n_step = N2_STEP;
+            break;
+    }
     switch(wave_t) {
         case SINUS:
             // DAC channel1 12-bit right-aligned data holding register
@@ -141,24 +149,40 @@ void TIM8_UP_TIM13_IRQHandler(void)
 }
 void EXTI9_5_IRQHandler(void)
 {
+    static uint16_t PRin = EXTI->PR;
+    //PFin = GPIOF->;
+    
     //__disable_irq();
-    GPIOI->ODR ^= PIN_LED;
-    switch (wave_t) {
-        case SINUS:
-            wave_t = TRIANGLE;
-            n_step = N2_STEP;
-            break;
-        case TRIANGLE:
-            wave_t = SINUS;
-            n_step = N1_STEP;
-            break;
+    if (PRin & EXTI_PR_PR8){ // PF8 -> wave_type toggle
+        switch (wave_t) {
+            case SINUS:
+                wave_t = TRIANGLE;
+                break;
+            case TRIANGLE:
+                wave_t = SINUS;
+                break;
+        }
+        stype_idx ^= 1;
+        GPIOI->ODR ^=PIN_LED_TYPE;
     }
+    if (PRin & EXTI_PR_PR7){ // PF7 -> wave_freq toggle
+        switch (wave_f) {
+            case F1:
+                wave_f = F2;
+                break;
+            case F2:
+                wave_f = F1;
+                break;
+        }
+        sfreq_idx ^= 1;
+        GPIOI->ODR ^= PIN_LED_FREQ;
+    }  
     //__enable_irq();
-
-    TIM_delay_us(100); // delay for 100 us
-    EXTI->PR = EXTI_PR_PR8; // Pending Register = Pending bit for line 8 (1<<8)
+    TIM_delay_us(100); // delay for 100 us (anti prell)
+    // ACK
+    EXTI->PR = (EXTI_PR_PR8 | EXTI_PR_PR7) & PFin; // see 12.3.6
+    //EXTI->PR = EXTI_PR_PR8; // Pending Register = Pending bit for line 8 (1<<8)
 }
-
 
 double tri(double t){
     // f(x) = 1 - |x|; (-1,1) -> (0,1)
@@ -183,6 +207,24 @@ void sigarr_init(void){
     }
 }
 
+void display_status(void){
+    static char stype[2][20] = {"SINUS   ", "TRIANGLE "};
+    static char sfreq[2][20] = {" 440", "4400"};
+    static int last_t = 1, last_f = 1;
+    if (last_t != stype_idx){
+        TFT_gotoxy(2,3);
+        TFT_puts(stype[stype_idx]);
+        last_t = stype_idx;
+
+    }
+    if (last_f != sfreq_idx){
+        TFT_gotoxy(2,4);
+        TFT_puts(sfreq[sfreq_idx]);
+        last_f = sfreq_idx;
+    }
+
+}
+/*
 char* int2Bin(char *out, int x, const int len)
 {
     int i = 0;
@@ -192,4 +234,4 @@ char* int2Bin(char *out, int x, const int len)
     out[len]=0;
     return out;
 }
-
+*/
