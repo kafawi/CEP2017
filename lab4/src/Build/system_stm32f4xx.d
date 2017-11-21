@@ -1,0 +1,12 @@
+.\build\system_stm32f4xx.o: Libraries\Device\system_stm32f4xx.c
+.\build\system_stm32f4xx.o: Libraries\Device\stm32f4xx.h
+.\build\system_stm32f4xx.o: C:\Keil_v5\ARM\CMSIS\Include\core_cm4.h
+.\build\system_stm32f4xx.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\build\system_stm32f4xx.o: C:\Keil_v5\ARM\CMSIS\Include\core_cmInstr.h
+.\build\system_stm32f4xx.o: C:\Keil_v5\ARM\CMSIS\Include\core_cmFunc.h
+.\build\system_stm32f4xx.o: C:\Keil_v5\ARM\CMSIS\Include\core_cm4_simd.h
+.\build\system_stm32f4xx.o: Libraries\Device\system_stm32f4xx.h
+.\build\system_stm32f4xx.o: Libraries\Device\stm32f4xx_conf.h
+.\build\system_stm32f4xx.o: Libraries\Device\RTE_Components.h
+.\build\system_stm32f4xx.o: .\Libraries\StdPeriph_Driver\inc\misc.h
+.\build\system_stm32f4xx.o: .\Libraries\Device\stm32f4xx.h

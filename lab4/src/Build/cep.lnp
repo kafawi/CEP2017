@@ -1,0 +1,19 @@
+--cpu=Cortex-M4.fp
+".\build\main.o"
+".\build\keypad.o"
+".\build\core_cm3.o"
+".\build\misc.o"
+".\build\stm32f4xx_gpio.o"
+".\build\stm32f4xx_rcc.o"
+".\build\stm32f4xx_usart.o"
+".\build\startup_stm32f40_41xxx.o"
+".\build\system_stm32f4xx.o"
+".\build\stm32f4xx_i2c.o"
+".\build\ce_lib.o"
+".\build\usart.o"
+".\build\retarget.o"
+".\build\tft.o"
+--library_type=microlib --strict --scatter ".\Build\cep.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\cep.map" -o .\Build\cep.axf

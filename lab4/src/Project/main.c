@@ -1,6 +1,6 @@
 #include <stm32f4xx.h>		
 #include <stm32f4xx_rcc.h>		
-//#include <stm32f4xx_gpio.h>
+#include <stm32f4xx_gpio.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
@@ -40,6 +40,8 @@ void display_status(void);
 // Output status pins 
 #define PIN_LED_FREQ (1<<6) // PI6
 #define PIN_LED_TYPE (1<<7) // PI7
+#define PIN_LED_TIM8 (1<<6) 
+#define PIN_LED_EXTI (1<<7)
 
 // global var
 uint32_t cycles_times_us; // for waiting in IRQ (anti prell)
@@ -57,22 +59,23 @@ volatile int stype_idx = 0, sfreq_idx = 0;
 
 int main()
 {
-    printf("CEP lab 4 -> interrupt, timer, DAC!\n");
+    
     sigarr_init();
     initCEP_Board();
     TIM_delay_init();
-
+	  //GPIOI->ODR |= (1<<5);
+		//TFT_puts("lab4");
     // TIMER
     // enable BRIGE/CLK for TIMER and DAC
     RCC->APB2ENR |= RCC_APB2ENR_TIM8EN; // clk/bus APB2 for TIM8 enable
     RCC->APB1ENR |= RCC_APB1ENR_DACEN;  // clk/bus APB1 for DAC enableGPIO
-    TIM8->CR1 = 0;
+    TIM8->CR1 = 0;  // enalbe clk
     TIM8->CR2 = 0;
     // set TIMER via CNT  f_dst = 44kHz, f_src = 168MHz -> CNT = 168M/44k = 38181.818 -> 38*100
     TIM8->PSC = PSCCNT -1; // PreSCaler : HCLK (168MHz) / 38 = 4421 kHz ( T = 226ns )
     TIM8->ARR = ARRCNT -1; // AutoReloadRegister : 4421 kHz / 100 = 44210 Hz (fast audio)
     NVIC_SetPriorityGrouping(5);
-    NVIC_SetPriority(TIM8_UP_TIM13_IRQn, 4);
+    NVIC_SetPriority(TIM8_UP_TIM13_IRQn, 4);  // normal 4
     NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
     TIM8->DIER = TIM_DIER_UIE; // IR for timer enable
     TIM8->CR1  = TIM_CR1_CEN | TIM_CR1_ARPE; // TIM_ARR is bufferd
@@ -83,21 +86,25 @@ int main()
 
     // enable BUS for BUTTON
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;  // bridge/clk for SYSCFG
-    SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~0xf)| 5; // PF 8,7,6 are avalable
+    SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~0xf)| 5; // PF 8 are avalable
+		EXTI->FTSR |= EXTI_FTSR_TR8; // Trigger falling edge  on line 8 (1<<8) // and line 7 is that possible
+    EXTI->IMR  |= EXTI_IMR_MR8;  // enable Interrupt (mask register on line 8)
                              // external interrupt configuration register (2)
                              // port F  (das ist magie, warum funktioniert das?)
                              //  5 = 0b0101 means PF
     // see cap 9.2.5 for more details ~0xf (0xfff0) EXTI(11 10 9 8)-> EXTI8 -> PF -> PF8
     // we also want to enable PF 7 for, so we need EXTICR2 -> [1] -> (7 6 5 4)
-    SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] & ~0xf000)| 5; 
+    SYSCFG->EXTICR[1] = (SYSCFG->EXTICR[1] & ~0xf000)| 0x5000; // pf 7
     // we have to distinguish in IRQ EXT9_5_IRQHandler with reading gpioF
-    //EXTI->FTSR |= EXTI_FTSR_TR8; // Trigger falling edge  on line 8 (1<<8) // and line 7 is that possible
-    //EXTI->IMR  |= EXTI_IMR_MR8;  // enable Interrupt (mask register on line 8)
-    EXTI->FTSR |= (EXTI_FTSR_TR8 | EXTI_FTSR_TR7);
-    EXTI->IMR  |= (EXTI_IMR_MR8 | EXTI_IMR_MR7);
+    
+    EXTI->FTSR |= EXTI_FTSR_TR7;
+    EXTI->IMR  |= EXTI_IMR_MR7;
     //
-    NVIC_SetPriority(EXTI9_5_IRQn, 2);
+    NVIC_SetPriority(EXTI9_5_IRQn, 2); // normal 2
     NVIC_EnableIRQ(EXTI9_5_IRQn);
+		//PI7
+		//GPIOI->MODER = (GPIOB->MODER & ~(3<<()) )
+		
     while(1){
         display_status();
     };
@@ -121,6 +128,7 @@ void TIM8_UP_TIM13_IRQHandler(void)
 {
     static uint16_t idx = 0;
     static uint16_t n_step = N1_STEP;
+	  //GPIOI->ODR = (GPIOI->ODR & ~0 ) | PIN_LED_TIM8;	
     TIM8->SR = ~TIM_SR_UIF; // UPDATE IRQ with 0 : 1 no effect
                             // Update_Interrupt_Flag
     switch(wave_f){
@@ -146,14 +154,15 @@ void TIM8_UP_TIM13_IRQHandler(void)
     if (idx >= ARRLEN){
         idx = 0;
     }
+		//GPIOI->ODR = (GPIOI->ODR & ~0x0) & ~PIN_LED_TIM8;
 }
 void EXTI9_5_IRQHandler(void)
 {
-    static uint16_t PRin = EXTI->PR;
-    //PFin = GPIOF->;
-    
+    uint16_t PRin = EXTI->PR; 
+    //GPIOI->ODR = (GPIOI->ODR & ~0 ) | PIN_LED_EXTI;	
     //__disable_irq();
     if (PRin & EXTI_PR_PR8){ // PF8 -> wave_type toggle
+			  EXTI->PR = EXTI_PR_PR8;
         switch (wave_t) {
             case SINUS:
                 wave_t = TRIANGLE;
@@ -166,6 +175,7 @@ void EXTI9_5_IRQHandler(void)
         GPIOI->ODR ^=PIN_LED_TYPE;
     }
     if (PRin & EXTI_PR_PR7){ // PF7 -> wave_freq toggle
+			  EXTI->PR = EXTI_PR_PR7;
         switch (wave_f) {
             case F1:
                 wave_f = F2;
@@ -178,10 +188,11 @@ void EXTI9_5_IRQHandler(void)
         GPIOI->ODR ^= PIN_LED_FREQ;
     }  
     //__enable_irq();
-    TIM_delay_us(100); // delay for 100 us (anti prell)
+    //TIM_delay_us(100); // delay for 100 us (for Priotesting)
     // ACK
-    EXTI->PR = (EXTI_PR_PR8 | EXTI_PR_PR7) & PFin; // see 12.3.6
+    //EXTI->PR = (EXTI_PR_PR8 | EXTI_PR_PR7) & PRin; // see 12.3.6
     //EXTI->PR = EXTI_PR_PR8; // Pending Register = Pending bit for line 8 (1<<8)
+		//GPIOI->ODR = (GPIOI->ODR & ~0x0) & ~PIN_LED_EXTI;
 }
 
 double tri(double t){
