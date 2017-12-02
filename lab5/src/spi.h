@@ -28,7 +28,7 @@ enum OPCODE                              // Fclk [MHz] :ADR : DUMMY : DATA
   ,WRITE_DISABLE                    = 0x04 // 100 : 0 : 0 : 0
   ,PROTECT_SECTOR                   = 0x36 // 100 : 3 : 0 : 0
   ,UNPROTECTET_SECTOR               = 0x39 // 100 : 3 : 0 : 0
-  ,GLOBAL_PROTECT_UNPROTECT         = 0x01 // Use Write Status Register Byt 1 Command
+  //,GLOBAL_PROTECT_UNPROTECT : Use WRITE_STATUS_REGISTER_BYTE_1
   ,READ_SECTOR_PROTECTION_REGISTERS = 0x3C // 100 : 3 : 0 : 1+
   // Security Commands
   ,SECTOR_LOCKDOWN                  = 0x33 // 100 : 3 : 0 : 1
