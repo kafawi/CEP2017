@@ -4,49 +4,48 @@
 
 #include <stm32f4xx.h>
 
-// --------------------------------------- AT25DF641 OP CODES
+// --------------------------------------------------------- AT25DF641 OP CODES
 // COMMAND LISTING , see Tab 6-1 in AT25DF641 manual (page 8)
-enum OPCODE                              // Fclk [MHz] :ADR : DUMMY : DATA 
-{
-  // READ Commands
-   READ_ARRAY_FAST                  = 0x1B // 100 : 3 : 2 : 1+
-  ,READ_ARRAY_MEDIUM                = 0x0B //  85 : 3 : 1 : 1+
-  ,READ_ARRAY_SLOW                  = 0x03 //  50 : 3 : 0 : 1+
-  ,DUAL_OUTPUT_READ_ARRAY           = 0x3B //  85 : 3 : 1 : 1+
-  // Programm and Erase Commands
-  ,BLOCK_ERASE_4KB                  = 0x20 // 100 : 3 : 0 : 0
-  ,BLOCK_ERASE_32KB                 = 0x52 // 100 : 3 : 0 : 0
-  ,BLOCK_ERASE_64KB                 = 0xD8 // 100 : 3 : 0 : 0
-  ,CHIP_ERASE                       = 0x60 // 100 : 0 : 0 : 0
-  ,CHIP_ERASE_ALTERNATIVE           = 0xC7 // 100 : 0 : 0 : 0
-  ,BYTE_PAGE_PROGRAM                = 0x02 // 100 : 3 : 0 : 1+
-  ,DUAL_INPUT_BYTE_PAGE_PROGRAM     = 0xA2 // 100 : 3 : 0 : 1+
-  ,PROGRAM_ERASE_SUSPEND            = 0xB0 // 100 : 0 : 0 : 0
-  ,PROGRAM_ERASE_RESUME             = 0xD0 // 100 : 0 : 0 : 0
-  // Protection Commands
-  ,WRITE_ENABLE                     = 0x06 // 100 : 0 : 0 : 0
-  ,WRITE_DISABLE                    = 0x04 // 100 : 0 : 0 : 0
-  ,PROTECT_SECTOR                   = 0x36 // 100 : 3 : 0 : 0
-  ,UNPROTECTET_SECTOR               = 0x39 // 100 : 3 : 0 : 0
+                                                       // Fclk:ADR:DMY:DATA
+                                                       // MHz : B : B : B
+// READ Commands --------------------------------------------------------------
+#define OPCODE_READ_ARRAY_FAST                  (0x1B) // 100 : 3 : 2 : 1+
+#define OPCODE_READ_ARRAY_MEDIUM                (0x0B) //  85 : 3 : 1 : 1+
+#define OPCODE_READ_ARRAY_SLOW                  (0x03) //  50 : 3 : 0 : 1+
+#define OPCODE_DUAL_OUTPUT_READ_ARRAY           (0x3B) //  85 : 3 : 1 : 1+
+// Programm and Erase Commands ------------------------------------------------
+#define OPCODE_BLOCK_ERASE_4KB                  (0x20) // 100 : 3 : 0 : 0
+#define OPCODE_BLOCK_ERASE_32KB                 (0x52) // 100 : 3 : 0 : 0
+#define OPCODE_BLOCK_ERASE_64KB                 (0xD8) // 100 : 3 : 0 : 0
+#define OPCODE_CHIP_ERASE                       (0x60) // 100 : 0 : 0 : 0
+#define OPCODE_CHIP_ERASE_ALTERNATIVE           (0xC7) // 100 : 0 : 0 : 0
+#define OPCODE_BYTE_PAGE_PROGRAM                (0x02) // 100 : 3 : 0 : 1+
+#define OPCODE_DUAL_INPUT_BYTE_PAGE_PROGRAM     (0xA2) // 100 : 3 : 0 : 1+
+#define OPCODE_PROGRAM_ERASE_SUSPEND            (0xB0) // 100 : 0 : 0 : 0
+#define OPCODE_PROGRAM_ERASE_RESUME             (0xD0) // 100 : 0 : 0 : 0
+// Protection Commands --------------------------------------------------------
+#define OPCODE_WRITE_ENABLE                     (0x06) // 100 : 0 : 0 : 0
+#define OPCODE_WRITE_DISABLE                    (0x04) // 100 : 0 : 0 : 0
+#define OPCODE_PROTECT_SECTOR                   (0x36) // 100 : 3 : 0 : 0
+#define OPCODE_UNPROTECTET_SECTOR               (0x39) // 100 : 3 : 0 : 0
   //,GLOBAL_PROTECT_UNPROTECT : Use WRITE_STATUS_REGISTER_BYTE_1
-  ,READ_SECTOR_PROTECTION_REGISTERS = 0x3C // 100 : 3 : 0 : 1+
-  // Security Commands
-  ,SECTOR_LOCKDOWN                  = 0x33 // 100 : 3 : 0 : 1
-  ,FREEZE_SECTOR_LOCKDOWN_STATE     = 0x34 // 100 : 3 : 0 : 1
-  ,READ_SECTOR_LOCKDOWN_REGISTERS   = 0x35 // 100 : 3 : 0 : 1+
-  ,PROGRAMM_OTP_SECURITY_REGISTER   = 0x9B // 100 : 3 : 0 : 1+
-  ,READ_OTP_SECURITY_REGISTER       = 0x77 // 100 : 3 : 2 : 1+
-  // Status Register Commands
-  ,READ_STATUS_REGISTER             = 0x05 // 100 : 0 : 0 : 1+
-  ,WRITE_STATUS_REGISTER_BYTE_1     = 0x01 // 100 : 0 : 0 : 1
-  ,WRITE_STATUS_REGISTER_BYTE_2     = 0x31 // 100 : 0 : 0 : 1
-  // Miscellanous Commands
-  ,RESET                            = 0xF0 // 100 : 0 : 0 : 1 
-  ,READ_MANUFACTURE_AND_DEVICE_ID   = 0x9F // 100 : 0 : 0 : 1 to 4 
-  ,DEEP_POWER_DOWN                  = 0xB9 // 100 : 0 : 0 : 0
-  ,RESUME_FROM_DEEP_POWER_DOWN      = 0xAB // 100 : 0 : 0 : 0
-}
-
+#define OPCODE_READ_SECTOR_PROTECTION_REGISTERS (0x3C) // 100 : 3 : 0 : 1+
+// Security Commands ----------------------------------------------------------
+#define OPCODE_SECTOR_LOCKDOWN                  (0x33) // 100 : 3 : 0 : 1
+#define OPCODE_FREEZE_SECTOR_LOCKDOWN_STATE     (0x34) // 100 : 3 : 0 : 1
+#define OPCODE_READ_SECTOR_LOCKDOWN_REGISTERS   (0x35) // 100 : 3 : 0 : 1+
+#define OPCODE_PROGRAMM_OTP_SECURITY_REGISTER   (0x9B) // 100 : 3 : 0 : 1+
+#define OPCODE_READ_OTP_SECURITY_REGISTER       (0x77) // 100 : 3 : 2 : 1+
+// Status Register Commands ---------------------------------------------------
+#define OPCODE_READ_STATUS_REGISTER             (0x05) // 100 : 0 : 0 : 1+
+#define OPCODE_WRITE_STATUS_REGISTER_BYTE_1     (0x01) // 100 : 0 : 0 : 1
+#define OPCODE_WRITE_STATUS_REGISTER_BYTE_2     (0x31) // 100 : 0 : 0 : 1
+// Miscellanous Commands ------------------------------------------------------
+#define OPCODE_RESET                            (0xF0) // 100 : 0 : 0 : 1
+#define OPCODE_READ_MANUFACTURE_AND_DEVICE_ID   (0x9F) // 100 : 0 : 0 : 1 to 4
+#define OPCODE_DEEP_POWER_DOWN                  (0xB9) // 100 : 0 : 0 : 0
+#define OPCODE_RESUME_FROM_DEEP_POWER_DOWN      (0xAB) // 100 : 0 : 0 : 0
+// ----------------------------------------------------------------------------
 // functions
 void init_SPI(void);
 void read_manu_id(void);
@@ -64,4 +63,3 @@ uint8_t write_byte(uint8_t data);
 uint8_t read_byte(void);
 uint8_t read_protection_reg(uint32_t adr);
 uint8_t read_status_reg(void);
-
