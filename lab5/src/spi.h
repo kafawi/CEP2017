@@ -2,8 +2,6 @@
  *
  */
 
-#include <stm32f4xx.h>
-
 // --------------------------------------------------------- AT25DF641 OP CODES
 // COMMAND LISTING , see Tab 6-1 in AT25DF641 manual (page 8)
                                                        // Fclk:ADR:DMY:DATA
@@ -46,10 +44,40 @@
 #define OPCODE_DEEP_POWER_DOWN                  (0xB9) // 100 : 0 : 0 : 0
 #define OPCODE_RESUME_FROM_DEEP_POWER_DOWN      (0xAB) // 100 : 0 : 0 : 0
 // ----------------------------------------------------------------------------
+// ------------------------------------- AT25DF641 STATUS REGISTER FORMAT (SRT)
+                            // TYPE: DESCRIPTION 
+// BYTE 1, see Tsb 11-1 in  AT25DF641 manual (page 36)
+#define SRT1_SPRL    (0x80) // R/W : Sector Protection Registers Locked (0->unlocked)
+//#define SRT1_RES     (0x40) //  R  : Reserved for future use
+#define SRT1_EPE     (0x20) //  R  : Erase/Programm Error (0-> success)
+#define SRT1_WPP     (0x10) //  R  : Write Protect (~WP) Pin Status (0->~WP is assert)
+#define SRT1_SWP1    ( 0x8) //  R  : Software Protection Status MSB
+#define SRT1_SWP0    ( 0x4) //  R  : Software Protection Status LSB
+#define SRT1_WEL     ( 0x2) //  R  : Write Enable Latch Status hi_active
+#define SRT1_RDY_BSY ( 0x1) //  R  : Ready (0) / Busy (1) Status
+// BYTE 2, see Tsb 11-2 in  AT25DF641 manual (page 37)
+#define SRT2_RSTE    (0x10) // R/W : Reset enabled (0 -> disabled)
+#define SRT2_SLE     ( 0x8) // R/W : Sector Lockdown Enabled (0-> (Freeze) Sector Lockdown State cmd disabled )
+#define SRT2_PS      ( 0x4) //  R  : Program Sustend Status (0-> No sectors are program suspended)
+#define SRT2_ES      ( 0x2) //  R  : Erase Suspend Status (0-> No sectore are erase suspended)
+#define SRT2_RDY_BSY ( 0x1) //  R  : Ready/Busy State (1-> Device is busy with an internal operation)
+
 // functions
+/**
+ * Configuration of GPIO and SPI3 
+*/
 void init_SPI(void);
+/**
+ *
+ */
 void read_manu_id(void);
+/**
+ *
+ */
 void spi_write(uint32_t adr, uint8_t *buff, uint32_t nbytes);
+/**
+ * 
+ */
 void spi_read(uint32_t adr, uint8_t *buff, uint32_t nbytes);
 
 void assert(void);
