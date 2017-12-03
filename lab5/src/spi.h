@@ -62,6 +62,8 @@
 #define SRT2_ES      ( 0x2) //  R  : Erase Suspend Status (0-> No sectore are erase suspended)
 #define SRT2_RDY_BSY ( 0x1) //  R  : Ready/Busy State (1-> Device is busy with an internal operation)
 
+// Makros
+#define BYTE_N_OF_NUMBER(N,NUM) ((uint8_t)(NUM>>(N*8)))
 // functions
 /**
  * Configuration of GPIO and SPI3 
@@ -70,7 +72,7 @@ void init_SPI(void);
 /**
  *
  */
-void read_manu_id(void);
+uint32_t read_device_id(void);
 /**
  *
  */
@@ -80,14 +82,21 @@ void spi_write(uint32_t adr, uint8_t *buff, uint32_t nbytes);
  */
 void spi_read(uint32_t adr, uint8_t *buff, uint32_t nbytes);
 
-void assert(void);
-void deassert(void);
+void assert_mem_work(void);
+void deassert_mem_work(void);
+void assert_mem_original(void);
+void deassert_mem_original(void);
 void write_enable(void);
 void protectet_sector(uint32_t adr);
 void unprotectet_sector(uint32_t adr);
 void send_adr(uint32_t adr);
 
+void print_manu_id(void); // with print debug
+void erase_block_4kb(uint32_t adr); // with print debug
+
 uint8_t write_byte(uint8_t data);
 uint8_t read_byte(void);
 uint8_t read_protection_reg(uint32_t adr);
-uint8_t read_status_reg(void);
+uint16_t read_status_reg(void);  //(SRT2<<8) & SRT1
+
+void wait_for_rdy(void);
