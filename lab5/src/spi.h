@@ -62,6 +62,8 @@
 #define SRT2_ES      ( 0x2) //  R  : Erase Suspend Status (0-> No sectore are erase suspended)
 #define SRT2_RDY_BSY ( 0x1) //  R  : Ready/Busy State (1-> Device is busy with an internal operation)
 
+#define SECTOR_PROTECTED   (0xFF)
+#define SECTOR_UNPROTECTED (0x00)
 // Makros
 #define BYTE_N_OF_NUMBER(N,NUM) ((uint8_t)(NUM>>(N*8)))
 // functions
@@ -100,3 +102,4 @@ uint8_t read_protection_reg(uint32_t adr);
 uint16_t read_status_reg(void);  //(SRT2<<8) & SRT1
 
 void wait_for_rdy(void);
+//void check_srt(uint8_t srt1_check, uint8_t srt2_check, uint8_t isWaiting);

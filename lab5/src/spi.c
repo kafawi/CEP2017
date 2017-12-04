@@ -2,6 +2,7 @@
  *
  */
 #include "spi.h"
+#include "debug.h"
 
 #include <stm32f4xx.h>  // etc
 #include <stm32f4xx_rcc.h> //
@@ -54,22 +55,156 @@ uint32_t read_device_id(void) // byte array is MSB( [31:24]=extendedDevice_info 
   buff |= (read_byte()<<(8*2));
   buff |= (read_byte()<<(8*3));
   deassert_mem_work();
+  DEBUG_FPRINT((
+    "Manu ID: %2x, DeviceID: %4x, extraDeviceID: 2x \n",
+    ((uint8_t)(buff>>(8*0))),
+    ((uint16_t)(buff>>(8*1))), 
+    ((uint8_t)(buff>>(8*3)))
+  ));
   return buff;
 }
 
 void erase_block_4kb(uint32_t adr)
 {
+  uint8_t protection_reg = 0;
+  DEBUG_FPRINT(("------------------------------ERASE BLOCK 4Kb-\n"));
+  DEBUG_FPRINT(("--start adr: %06x\n",adr));
+  DEBUG_FPRINT(("--befor write_enable for unprotect_sector:\n"));
+  DEBUG_DO( read_status_reg() );
+  write_enable();
+  DEBUG_FPRINT(("--after write_enable:\nstatus reg, WEL == 1 (old + 0x2)\n"));
+  DEBUG_DO( read_status_reg(adr) );
+  DEBUG_FPRINT(("--befor uprotect_sector:\n"));
+  DEBUG_DO( read_protection_reg(adr) );
+  unprotectet_sector(adr);
+  DEBUG_FPRINT(("--after uprotect_sector:\n"));
+  // polling 
+  wait_for_rdy();
+  while(read_protection_reg(adr) != SECTOR_UNPROTECTED);
 
+  DEBUG_FPRINT(("--befor write_enable for erase_block_4kb:\n"));
+  DEBUG_DO( read_status_reg() );
+  write_enable();
+  DEBUG_FPRINT(("--after write_enable:\n"));
+  DEBUG_DO( read_status_reg() );
+  DEBUG_FPRINT(("--befor erase_block_4kb cmds:\n"));
+  assert_mem_work(); DEBUG_FPRINT(("~CS set hi\n"));
+  write_byte(OPCODE_BLOCK_ERASE_4KB); 
+  DEBUG_FPRINT(("send opcode:%02x\n", OPCODE_BLOCK_ERASE_4KB));
+  send_adr(adr);
+  DEBUG_FPRINT(("send ADR:%06x\n", adr));
+  deassert_mem_work(); DEBUG_FPRINT(("~CS set lo\n"));
+  DEBUG_FPRINT(("--after erase_block_4kb cmds:\n"));
+  //polling
+  DEBUG_DO( read_status_reg() );
+  wait_for_rdy();
+  DEBUG_DO( read_status_reg() );
+  DEBUG_DO( read_protection_reg(adr) );
+
+  DEBUG_FPRINT(("END---------------------------ERASE BLOCK 4Kb-\n"));
+}
+
+/*
+void check_srt(uint8_t srt1_check, uint8_t srt2_check, , uint8_t isWaiting)
+{
+  uint8_t srt1_buff = 0x0;
+  uint8_t srt2_buff = 0x0;
+  uint32_t cnt = 0;
+  assert_mem_work();
+  write_byte(OPCODE_READ_STATUS_REGISTER);
+  buff |= read_byte();      // status register byte 1
+  buff |= (read_byte()<<8); // status register byte 2
+  do {
+      buff |= read_byte();  // status register byte 1 again
+      cnt++;
+  }while(buff & STR1_RDY_BSY);
+  deassert_mem_work();
+  DEBUG_FPRINT(("RDY after %d pollingloops \n", cnt));
+  return buff;
+}
+*/
+void wait_for_rdy(void) // see script of Prof Schwarz: Flash Memory (page 41)
+{
+  uint16_t buff = 0x0;
+  uint32_t cnt = 0;
+  assert_mem_work();
+  write_byte(OPCODE_READ_STATUS_REGISTER);
+  while ((read_byte() & SRT1_RDY_BSY) == SRT1_RDY_BSY){cnt++;}
+  deassert_mem_work();
+  DEBUG_FPRINT(("RDY after %d pollingloops \n", cnt));
+  return buff;
 }
 
 void spi_write(uint32_t adr, uint8_t *buff, uint32_t nbytes)
 {
-	
+  int i=0;
+	DEBUG_FPRINT(("----------------------------------------WRITE-\n"));
+  DEBUG_FPRINT(("--start adr: %06x\n",adr));
+  DEBUG_FPRINT(("--befor write_enable for unprotect_sector:\n"));
+  DEBUG_DO( read_status_reg() );
+  write_enable();
+  DEBUG_FPRINT(("--after write_enable:\nstatus reg, WEL == 1 (old + 0x2)\n"));
+  DEBUG_DO( read_status_reg(adr) );
+  DEBUG_FPRINT(("--befor uprotect_sector:\n"));
+  DEBUG_DO( read_protection_reg(adr) );
+  unprotectet_sector(adr);
+  DEBUG_FPRINT(("--after uprotect_sector:\n"));
+  // polling 
+  wait_for_rdy();
+  while(read_protection_reg(adr) != SECTOR_UNPROTECTED);
+
+  DEBUG_FPRINT(("--befor write_enable for write_bytes:\n"));
+  DEBUG_DO( read_status_reg() );
+  write_enable();
+  DEBUG_FPRINT(("--after write_enable:\n"));
+  DEBUG_DO( read_status_reg() );
+  DEBUG_FPRINT(("--befor OPCODE_BYTE_PAGE_PROGRAM cmd:\n"));
+  assert_mem_work(); DEBUG_FPRINT(("~CS set hi\n"));
+  write_byte(OPCODE_BYTE_PAGE_PROGRAM); 
+  DEBUG_FPRINT(("send opcode:%02x\n", OPCODE_BYTE_PAGE_PROGRAM));
+  send_adr(adr);
+  DEBUG_FPRINT(("send ADR:%06x\n", adr));
+  for(i=0;i<nbytes;i++){
+    write_byte(buff[i]);
+  }
+  DEBUG_FPRINT(("write %d bytes into mem\n", nbytes));
+  deassert_mem_work(); DEBUG_FPRINT(("~CS set lo\n"));
+  DEBUG_FPRINT(("--after OPCODE_BYTE_PAGE_PROGRAM cmds:\n"));
+  //polling
+  DEBUG_DO( read_status_reg() );
+  wait_for_rdy();
+  DEBUG_DO( read_status_reg() );
+  DEBUG_DO( read_protection_reg(adr) );
+  
+  DEBUG_FPRINT(("END-------------------------------------WRITE-\n"));
 }
 
 void spi_read(uint32_t adr, uint8_t *buff, uint32_t nbytes)
 {
-	
+  int i = 0;
+	DEBUG_FPRINT(("-----------------------------------------READ-\n"));
+  DEBUG_FPRINT(("--befor write_enable for OPCODE_READ_ARRAY_SLOW:\n"));
+  DEBUG_DO( read_status_reg() );
+  write_enable();
+  DEBUG_FPRINT(("--after write_enable:\n"));
+  DEBUG_DO( read_status_reg() );
+  DEBUG_FPRINT(("--befor OPCODE_READ_ARRAY_SLOW cmds:\n"));
+  assert_mem_work(); DEBUG_FPRINT(("~CS set hi\n"));
+  write_byte(OPCODE_READ_ARRAY_SLOW); 
+  DEBUG_FPRINT(("send opcode:%02x\n",OPCODE_READ_ARRAY_SLOW));
+  send_adr(adr);
+  DEBUG_FPRINT(("send ADR:%06x\n", adr));
+  for(i=0;i<nbytes;i++){
+    buff[i] = read_byte();
+  }
+  DEBUG_FPRINT(("write %d bytes into mem\n", nbytes));
+  deassert_mem_work(); DEBUG_FPRINT(("~CS set lo\n"));
+  DEBUG_FPRINT(("--after OPCODE_READ_ARRAY_SLOW cmds:\n"));
+  //no polling reqired
+  DEBUG_DO( read_status_reg() );
+  DEBUG_DO( read_protection_reg(adr) );
+  
+  DEBUG_FPRINT(("END--------------------------------------READ-\n"));
 }
 
 
@@ -156,6 +291,7 @@ uint8_t read_protection_reg(uint32_t adr) // see Amtel manual (page 27)
   //read_byte();read_byte(); // two dummy // is that nessessary?
   buff = read_byte();
   deassert();
+  DEBUG_FPRINT(("Protection_reg: %02x of ADR: %06x\n",buff,adr));
   return buff;
 }
 
@@ -168,6 +304,7 @@ uint16_t read_status_reg(void) // see Amtl manual cap 11.1 (page 39) retunr [15:
   buff |= (read_byte()<<8); // status register byte 2
   buff |= read_byte();      // status register byte 1 again
   deassert_mem_work();
+  DEBUG_FPRINT(("Status_reg (byte2 :SRT2 & byte1: SRT1):%04x \n", buff));
   return buff;
 }
 
