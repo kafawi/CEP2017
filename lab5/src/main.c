@@ -10,29 +10,25 @@
 #include "tft.h"
 
 // fct declaration
-double tri(double t);
 void sigarr_init(void);
 
 // IRS
 void TIM8_UP_TIM13_IRQHandler(void);
 void EXTI9_5_IRQHandler(void);
-
-
 // TIMER
 void TIM_delay_init(void);
 void TIM_delay_us(uint32_t t_us);
 // helpers
-char *int2Bin(char* out, int x, int width);
-void display_status(void);
-
-
+void loop_do(void);
 
 // constants
 #define PI 3.14159265359
 // F_out = 44kHz 
-#define ARRLEN 100 
-#define N1_STEP 1 // 440Hz  =  F_out/(ARRLEN/1)  
-#define N2_STEP 10 // 4.4kHz = F_out/(ARRLEN/10)
+#define ARRLEN_F4400 (100)
+#define ARRLEN_F440   (10)
+
+#define PAGE_1 (0x000000)
+#define PAGE_2 (0x000100)
 
 // for counter HCLK = 168MHz -> HCLK / F_out = 38181 =~ 38 * 100
 #define PSCCNT 38
@@ -45,26 +41,22 @@ void display_status(void);
 
 // global var
 uint32_t cycles_times_us; // for waiting in IRQ (anti prell)
-uint16_t n_step = N1_STEP; 
-int16_t sigarr_tri[ARRLEN];
-int16_t sigarr_sin[ARRLEN];
-volatile enum wave_type {SINUS, TRIANGLE} wave_t = SINUS;
-volatile enum wave_freq {F1,F2} wave_f = F1;
+int16_t dac_out_arr[ARRLEN_F4400];
 
-// FOR DISPLAY OUTPUT in main loop
-volatile int stype_idx = 0, sfreq_idx = 0; 
+//volatile enum wave_type {SINUS, TRIANGLE} wave_t = SINUS;
+volatile enum wave_freq {F1,F2} wave_f = F1;
+volatile enum e_dac_out {OFF,ON} dac_out = ON;
+volatile uint16_t arrlen = ARRLEN_F440;
 
 // macros
-#define INT16_2_UINT(x) ((x + INT16_MAX+1)>>4)
+#define INT16_2_UINT12(x) ((x + INT16_MAX+1)>>4)
 
 int main()
-{
-    
-    sigarr_init();
+{   
     initCEP_Board();
     TIM_delay_init();
-	  //GPIOI->ODR |= (1<<5);
-		//TFT_puts("lab4");
+    init_SPI();
+    sigarr_init();
     // TIMER
     // enable BRIGE/CLK for TIMER and DAC
     RCC->APB2ENR |= RCC_APB2ENR_TIM8EN; // clk/bus APB2 for TIM8 enable
@@ -106,7 +98,8 @@ int main()
 		//GPIOI->MODER = (GPIOB->MODER & ~(3<<()) )
 		
     while(1){
-        display_status();
+        //display_status();
+        loop_do();
     };
 }
 // TIMER ----------------------------------------------------------------------
@@ -131,48 +124,27 @@ void TIM8_UP_TIM13_IRQHandler(void)
 	  //GPIOI->ODR = (GPIOI->ODR & ~0 ) | PIN_LED_TIM8;	
     TIM8->SR = ~TIM_SR_UIF; // UPDATE IRQ with 0 : 1 no effect
                             // Update_Interrupt_Flag
-    switch(wave_f){
-        case F1:
-            n_step = N1_STEP;
-            break;
-        case F2:
-            n_step = N2_STEP;
-            break;
+    if(dac_out == ON){
+        if (idx >= arrlen) idx = 0;
+        DAC->DHR12R1 = INT16_2_UINT12(dac_out_arr[idx]);
+        idx++;
     }
-    switch(wave_t) {
-        case SINUS:
-            // DAC channel1 12-bit right-aligned data holding register
-            DAC->DHR12R1 = INT16_2_UINT(sigarr_sin[idx]);
-            idx += n_step;
-            break;
-        case TRIANGLE:
-            DAC->DHR12R1 = INT16_2_UINT(sigarr_tri[idx]);
-            idx += n_step;
-            break;
-    }
-    // reset index
-    if (idx >= ARRLEN){
-        idx = 0;
-    }
-		//GPIOI->ODR = (GPIOI->ODR & ~0x0) & ~PIN_LED_TIM8;
 }
 void EXTI9_5_IRQHandler(void)
 {
-    uint16_t PRin = EXTI->PR; 
-    //GPIOI->ODR = (GPIOI->ODR & ~0 ) | PIN_LED_EXTI;	
-    //__disable_irq();
-    if (PRin & EXTI_PR_PR8){ // PF8 -> wave_type toggle
-			  EXTI->PR = EXTI_PR_PR8;
-        switch (wave_t) {
-            case SINUS:
-                wave_t = TRIANGLE;
+    uint16_t PRin = EXTI->PR;
+    if (PRin & EXTI_PR_PR8){ // PF8 -> dac_ot toggle
+			  EXTI->PR = EXTI_PR_PR8;        
+        switch (dac_out) {
+            case OFF:
+                wave_t = ON;
                 break;
-            case TRIANGLE:
-                wave_t = SINUS;
+            case ON:
+                wave_t = OFF;
                 break;
         }
-        stype_idx ^= 1;
         GPIOI->ODR ^=PIN_LED_TYPE;
+        
     }
     if (PRin & EXTI_PR_PR7){ // PF7 -> wave_freq toggle
 			  EXTI->PR = EXTI_PR_PR7;
@@ -184,65 +156,56 @@ void EXTI9_5_IRQHandler(void)
                 wave_f = F1;
                 break;
         }
-        sfreq_idx ^= 1;
         GPIOI->ODR ^= PIN_LED_FREQ;
     }  
-    //__enable_irq();
-    //TIM_delay_us(100); // delay for 100 us (for Priotesting)
-    // ACK
-    //EXTI->PR = (EXTI_PR_PR8 | EXTI_PR_PR7) & PRin; // see 12.3.6
-    //EXTI->PR = EXTI_PR_PR8; // Pending Register = Pending bit for line 8 (1<<8)
-		//GPIOI->ODR = (GPIOI->ODR & ~0x0) & ~PIN_LED_EXTI;
 }
 
-double tri(double t){
-    // f(x) = 1 - |x|; (-1,1) -> (0,1)
-    //x = (t-t0)/T)
-    double t0 = PI/2, T = PI, intpart;
-    double x = (t - t0)/T;
-    if (x > 1 ){
-        x = modf(x, &intpart) - 1;
-    } else if (x < -1) {
-        x = modf(x, &intpart) + 1;
-    }
-    // -> (-1,1) ; f(t) *2 -1;
-    return 2*(1 - fabs(x))-1;
-}
 void sigarr_init(void){
     int i=0;
-    double dx = 2*PI/ARRLEN;
-
-    for(i=0; i< ARRLEN; i++){
-        sigarr_sin[i]    = (int16_t) (INT16_MAX * sin(dx*i));
-        sigarr_tri[i] = (int16_t) (INT16_MAX * tri(dx*i));
+    double dx = 0;
+    int16_t buff_arr[ARRLEN_F4400];
+    // slow 10 values
+    dx = 2*PI/ARRLEN_F440;
+    for(i=0; i< ARRLEN_F440; i++){
+        buff_arr[i]  = (int16_t) (INT16_MAX * sin(dx*i));
     }
+    spi_write(PAGE_1, (uint8_t)buff_arr, ARRLEN_F440*2);
+
+    // fast 100 values
+    dx = 2*PI/ARRLEN_F4400;
+    for(i=0; i< ARRLEN_F4400; i++){
+        buff_arr[i]  = (int16_t) (INT16_MAX * sin(dx*i));
+    }
+    spi_write(PAGE_2, (uint8_t)buff_arr, ARRLEN_F4400*2);
+
+    // lese auf das ausgabe array
+    spi_read(PAGE_1, dac_out_arr, ARRLEN_F440*2);
 }
 
-void display_status(void){
-    static char stype[2][20] = {"SINUS   ", "TRIANGLE "};
-    static char sfreq[2][20] = {" 440", "4400"};
-    static int last_t = 1, last_f = 1;
-    if (last_t != stype_idx){
-        TFT_gotoxy(2,3);
-        TFT_puts(stype[stype_idx]);
-        last_t = stype_idx;
 
-    }
-    if (last_f != sfreq_idx){
-        TFT_gotoxy(2,4);
-        TFT_puts(sfreq[sfreq_idx]);
-        last_f = sfreq_idx;
-    }
 
-}
-/*
-char* int2Bin(char *out, int x, const int len)
-{
-    int i = 0;
-    for(i=0;i < len; i++){
-      out[len-1-i] = (x & (1<<i) ? '1' : '0');
+void loop_do(void){
+    static enum wave_freq old_freq = F1;
+   
+    switch (wave_freq){
+        case (F1):
+            if (old_freq = F2){
+                 __disable_irq();
+                old_freq = F1;
+                spi_read(PAGE_1, dac_out_arr, ARRLEN_F440*2);
+                arrlen = ARRLEN_F440;
+                __enable_irq();
+            }
+            break;
+        case (F2):
+            if (old_freq = F1){
+                __disable_irq();
+                old_freq = F2;
+                spi_read(PAGE_2, dac_out_arr, ARRLEN_F4400*2);
+                arrlen = ARRLEN_F4400;
+                __enable_irq();
+            }
+            break;
     }
-    out[len]=0;
-    return out;
+    read_device_id();
 }
-*/
