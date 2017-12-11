@@ -8,7 +8,7 @@
 
 #include "CE_Lib.h" // initCEBOARD
 #include "tft.h"
-
+#include "spi.h"
 // fct declaration
 void sigarr_init(void);
 
@@ -41,22 +41,21 @@ void loop_do(void);
 
 // global var
 uint32_t cycles_times_us; // for waiting in IRQ (anti prell)
-int16_t dac_out_arr[ARRLEN_F4400];
+int16_t dac_out_arr[ARRLEN_F4400*2];
 
 //volatile enum wave_type {SINUS, TRIANGLE} wave_t = SINUS;
 volatile enum wave_freq {F1,F2} wave_f = F1;
 volatile enum e_dac_out {OFF,ON} dac_out = ON;
-volatile uint16_t arrlen = ARRLEN_F440;
+volatile uint16_t arrlen = ARRLEN_F4400*2;
 
 // macros
 #define INT16_2_UINT12(x) ((x + INT16_MAX+1)>>4)
-
+uint8_t testarr[] = {1,2,3,4,5,6,7,8};
 int main()
 {   
     initCEP_Board();
     TIM_delay_init();
     init_SPI();
-    sigarr_init();
     // TIMER
     // enable BRIGE/CLK for TIMER and DAC
     RCC->APB2ENR |= RCC_APB2ENR_TIM8EN; // clk/bus APB2 for TIM8 enable
@@ -79,7 +78,7 @@ int main()
     // enable BUS for BUTTON
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;  // bridge/clk for SYSCFG
     SYSCFG->EXTICR[2] = (SYSCFG->EXTICR[2] & ~0xf)| 5; // PF 8 are avalable
-		EXTI->FTSR |= EXTI_FTSR_TR8; // Trigger falling edge  on line 8 (1<<8) // and line 7 is that possible
+	EXTI->FTSR |= EXTI_FTSR_TR8; // Trigger falling edge  on line 8 (1<<8) // and line 7 is that possible
     EXTI->IMR  |= EXTI_IMR_MR8;  // enable Interrupt (mask register on line 8)
                              // external interrupt configuration register (2)
                              // port F  (das ist magie, warum funktioniert das?)
@@ -95,11 +94,14 @@ int main()
     NVIC_SetPriority(EXTI9_5_IRQn, 2); // normal 2
     NVIC_EnableIRQ(EXTI9_5_IRQn);
 		//PI7
-		//GPIOI->MODER = (GPIOB->MODER & ~(3<<()) )
-		
+		//GPIOI->MODER = (GPIOB->MODER & ~(3<<()) )     
+    void select_mem(WORK);
+    read_device_id();
+    erase_block_4kb(PAGE_1);
+    sigarr_init();
+    //read_array(PAGE_1,dac_out_arr, ) // 440 HZ sinus from 
     while(1){
-        //display_status();
-        loop_do();
+	  read_device_id();		
     };
 }
 // TIMER ----------------------------------------------------------------------
@@ -120,7 +122,6 @@ void TIM_delay_us(uint32_t t_us)
 void TIM8_UP_TIM13_IRQHandler(void)
 {
     static uint16_t idx = 0;
-    static uint16_t n_step = N1_STEP;
 	  //GPIOI->ODR = (GPIOI->ODR & ~0 ) | PIN_LED_TIM8;	
     TIM8->SR = ~TIM_SR_UIF; // UPDATE IRQ with 0 : 1 no effect
                             // Update_Interrupt_Flag
@@ -137,10 +138,10 @@ void EXTI9_5_IRQHandler(void)
 			  EXTI->PR = EXTI_PR_PR8;        
         switch (dac_out) {
             case OFF:
-                wave_t = ON;
+                dac_out = ON;
                 break;
             case ON:
-                wave_t = OFF;
+                dac_out = OFF;
                 break;
         }
         GPIOI->ODR ^=PIN_LED_TYPE;
@@ -164,44 +165,59 @@ void sigarr_init(void){
     int i=0;
     double dx = 0;
     int16_t buff_arr[ARRLEN_F4400];
+    uint32_t remain_nbyte = (NBYTE_PAGE - ARRLEN_F4400*2); 
+    uint32_t last_nbyte = (ARRLEN_F4400*2) - remain_nbyte;
+    __disable_irq();
+    dac_out = OFF;
+    __enable_irq();
     // slow 10 values
     dx = 2*PI/ARRLEN_F440;
     for(i=0; i< ARRLEN_F440; i++){
         buff_arr[i]  = (int16_t) (INT16_MAX * sin(dx*i));
     }
-    spi_write(PAGE_1, (uint8_t)buff_arr, ARRLEN_F440*2);
+    program_page(PAGE_1, (uint8_t*)buff_arr, ARRLEN_F440*2);
+    program_page(PAGE_1+(ARRLEN_F440*2), (uint8_t*)buff_arr, ARRLEN_F440*2);
 
     // fast 100 values
     dx = 2*PI/ARRLEN_F4400;
     for(i=0; i< ARRLEN_F4400; i++){
         buff_arr[i]  = (int16_t) (INT16_MAX * sin(dx*i));
     }
-    spi_write(PAGE_2, (uint8_t)buff_arr, ARRLEN_F4400*2);
-
+    program_page(PAGE_2, (uint8_t*)buff_arr, ARRLEN_F4400*2); // first periode
+    program_page(PAGE_2+(ARRLEN_F4400*2), (uint8_t*)buff_arr, remain_nbyte); // 2nd periode
+    program_page(PAGE_2+NBYTE_PAGE, (uint8_t*)buff_arr + remain_nbyte, last_nbyte);
+    
     // lese auf das ausgabe array
-    spi_read(PAGE_1, dac_out_arr, ARRLEN_F440*2);
+
+    read_array(PAGE_1, (uint8_t*)dac_out_arr, (ARRLEN_F440*2)*2); 
+    arrlen = (ARRLEN_F440*2);
+    //read_array(PAGE_2, (uint8_t*)dac_out_arr, (ARRLEN_F4400*2)*2);
+    //arrlen = (ARRLEN_F4400*2);
+    __disable_irq();
+    dac_out = ON;
+    __enable_irq();  
 }
 
 
-
+/*
 void loop_do(void){
     static enum wave_freq old_freq = F1;
    
-    switch (wave_freq){
+    switch (wave_f){
         case (F1):
-            if (old_freq = F2){
+            if (old_freq == F2){
                  __disable_irq();
                 old_freq = F1;
-                spi_read(PAGE_1, dac_out_arr, ARRLEN_F440*2);
+                spi_read(PAGE_1, (uint8_t*)dac_out_arr, ARRLEN_F440*2);
                 arrlen = ARRLEN_F440;
                 __enable_irq();
             }
             break;
         case (F2):
-            if (old_freq = F1){
+            if (old_freq == F1){
                 __disable_irq();
                 old_freq = F2;
-                spi_read(PAGE_2, dac_out_arr, ARRLEN_F4400*2);
+                spi_read(PAGE_2, (uint8_t*)dac_out_arr, ARRLEN_F4400*2);
                 arrlen = ARRLEN_F4400;
                 __enable_irq();
             }
@@ -209,3 +225,4 @@ void loop_do(void){
     }
     read_device_id();
 }
+*/

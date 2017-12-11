@@ -1,12 +1,45 @@
 /**
  *
  */
+#include <stdint.h>
 #include "spi.h"
 #include "debug.h"
 
 #include <stm32f4xx.h>  // etc
 #include <stm32f4xx_rcc.h> //
 #include <stm32f4xx_spi.h> // Parameters for SPI3->CR1
+#include <stm32f4xx_gpio.h>
+
+
+// int wait_deassert_mem = 0; 
+// MAKROS FOR ASSERTATION  (CHIPSELECTR)
+       
+// chip select -> assert/deassert                                                 
+static enum mem_selection mem_select = WORK;
+// fct declaration (private)
+void assert_mem(void);
+void deassert_mem(void);
+
+uint8_t write_byte(uint8_t data);
+uint8_t read_byte(void);
+
+void write_enable(void);
+void send_adr(uint32_t adr);
+
+uint16_t read_status_reg(void);  //(SRT2<<8) & SRT1
+uint8_t read_protection_reg(uint32_t adr); // for debug purpose only
+
+void protectet_sector(uint32_t adr);
+void unprotectet_sector(uint32_t adr);
+
+
+
+void select_mem(enum mem_selection x)
+{
+  if (ORIGINAL == x || WORK == x){
+    mem_select = x;
+  }
+}
 
 void init_SPI(void)
 {
@@ -31,285 +64,185 @@ void init_SPI(void)
 
   // SPI Parametters for CR1 CR2 and baut 
   // see page cap. 28.5.1 and 28.5.1 in ref manulal stm32f4xx
-  SPI3->CR1 = 
-       (1<<2)  // Master mode
-    |  (0<<11) // 8-Bit  (DFF) Data frame format
-    |  (0<<10) // full duplex tranfer (RXONLY) Receive only
-    |  (0<<7)  // MSB-first (LSBFIRST) Frame format
-    |  (1<<0)  // 2nd clock transition is first data capture edge (CPHA) Clock phase
-    |  (1<<1)  // CK to 1 when idle (CPOL) Clock polarity
-    |(0x0<<3)  // f_PCLK / 2 (BR) Baud rate control
-    //|(0x1<<3)  // f_PCLK / 4 (BR) Baud rate control
-    ;  
-    //
-  SPI3->CR2 = (0<<4); // SPI Motorola mode (FRF) Frame format (not ti mode)
+	SPI3->CR1 = (              // MSB-first (0<<7), full duplex transfer (0<<10), 8-Bit DFF (0<<11)
+    SPI_CR1_SPE              // SPI Enable
+  | SPI_CR1_MSTR             // Master mode
+  | SPI_CR1_CPOL             // Clock POLarity to 1 in idle
+  | SPI_CR1_CPHA             // 2nd clock transition is first data capture edge (Clock PHAse)
+  | SPI_CR1_SSM              // Software Slave Management (Software NSS management NSS<-SSI)
+  | SPI_CR1_SSI              // Internal Slave Select (simplyfied: NSS-pin <- 1)
+  | SPI_BaudRatePrescaler_8  // f_PCLK / 8 
+  );
+  // CR2 = 0; by default -> FRF-Bit = 0: is in Motorola mode by default 
 }
 
-uint32_t read_device_id(void) // byte array is MSB( [31:24]=extendedDevice_info | [23:16]=DeviceID2 | [15:8]=DeviceID1 | [7:0]=ManuID  )LSB
-{
-  uint32_t buff = 0;
-	assert_mem_work();
-  write_byte(OPCODE_READ_MANUFACTURE_AND_DEVICE_ID);
-  buff |= (read_byte()<<(8*0));
-  buff |= (read_byte()<<(8*1));
-  buff |= (read_byte()<<(8*2));
-  buff |= (read_byte()<<(8*3));
-  deassert_mem_work();
-  DEBUG_FPRINT((
-    "Manu ID: %2x, DeviceID: %4x, extraDeviceID: 2x \n",
-    ((uint8_t)(buff>>(8*0))),
-    ((uint16_t)(buff>>(8*1))), 
-    ((uint8_t)(buff>>(8*3)))
-  ));
-  return buff;
+void assert_mem(void){
+  switch(mem_select){                                
+    case(ORIGINAL): GPIOB->BSRRH = GPIO_Pin_9; break;
+    case(WORK)    : GPIOG->BSRRH = GPIO_Pin_6; break;
+  }
 }
 
-void erase_block_4kb(uint32_t adr)
-{
-  uint8_t protection_reg = 0;
-  DEBUG_FPRINT(("------------------------------ERASE BLOCK 4Kb-\n"));
-  DEBUG_FPRINT(("--start adr: %06x\n",adr));
-  DEBUG_FPRINT(("--befor write_enable for unprotect_sector:\n"));
-  DEBUG_DO( read_status_reg() );
-  write_enable();
-  DEBUG_FPRINT(("--after write_enable:\nstatus reg, WEL == 1 (old + 0x2)\n"));
-  DEBUG_DO( read_status_reg(adr) );
-  DEBUG_FPRINT(("--befor uprotect_sector:\n"));
-  DEBUG_DO( read_protection_reg(adr) );
-  unprotectet_sector(adr);
-  DEBUG_FPRINT(("--after uprotect_sector:\n"));
-  // polling 
-  wait_for_rdy();
-  while(read_protection_reg(adr) != SECTOR_UNPROTECTED);
-
-  DEBUG_FPRINT(("--befor write_enable for erase_block_4kb:\n"));
-  DEBUG_DO( read_status_reg() );
-  write_enable();
-  DEBUG_FPRINT(("--after write_enable:\n"));
-  DEBUG_DO( read_status_reg() );
-  DEBUG_FPRINT(("--befor erase_block_4kb cmds:\n"));
-  assert_mem_work(); DEBUG_FPRINT(("~CS set hi\n"));
-  write_byte(OPCODE_BLOCK_ERASE_4KB); 
-  DEBUG_FPRINT(("send opcode:%02x\n", OPCODE_BLOCK_ERASE_4KB));
-  send_adr(adr);
-  DEBUG_FPRINT(("send ADR:%06x\n", adr));
-  deassert_mem_work(); DEBUG_FPRINT(("~CS set lo\n"));
-  DEBUG_FPRINT(("--after erase_block_4kb cmds:\n"));
-  //polling
-  DEBUG_DO( read_status_reg() );
-  wait_for_rdy();
-  DEBUG_DO( read_status_reg() );
-  DEBUG_DO( read_protection_reg(adr) );
-
-  DEBUG_FPRINT(("END---------------------------ERASE BLOCK 4Kb-\n"));
-}
-
-/*
-void check_srt(uint8_t srt1_check, uint8_t srt2_check, , uint8_t isWaiting)
-{
-  uint8_t srt1_buff = 0x0;
-  uint8_t srt2_buff = 0x0;
-  uint32_t cnt = 0;
-  assert_mem_work();
-  write_byte(OPCODE_READ_STATUS_REGISTER);
-  buff |= read_byte();      // status register byte 1
-  buff |= (read_byte()<<8); // status register byte 2
-  do {
-      buff |= read_byte();  // status register byte 1 again
-      cnt++;
-  }while(buff & STR1_RDY_BSY);
-  deassert_mem_work();
-  DEBUG_FPRINT(("RDY after %d pollingloops \n", cnt));
-  return buff;
-}
-*/
-void wait_for_rdy(void) // see script of Prof Schwarz: Flash Memory (page 41)
-{
-  uint16_t buff = 0x0;
-  uint32_t cnt = 0;
-  assert_mem_work();
-  write_byte(OPCODE_READ_STATUS_REGISTER);
-  while ((read_byte() & SRT1_RDY_BSY) == SRT1_RDY_BSY){cnt++;}
-  deassert_mem_work();
-  DEBUG_FPRINT(("RDY after %d pollingloops \n", cnt));
-  return buff;
-}
-
-void spi_write(uint32_t adr, uint8_t *buff, uint32_t nbytes)
-{
+void deassert_mem(void){
   int i=0;
-	DEBUG_FPRINT(("----------------------------------------WRITE-\n"));
-  DEBUG_FPRINT(("--start adr: %06x\n",adr));
-  DEBUG_FPRINT(("--befor write_enable for unprotect_sector:\n"));
-  DEBUG_DO( read_status_reg() );
-  write_enable();
-  DEBUG_FPRINT(("--after write_enable:\nstatus reg, WEL == 1 (old + 0x2)\n"));
-  DEBUG_DO( read_status_reg(adr) );
-  DEBUG_FPRINT(("--befor uprotect_sector:\n"));
-  DEBUG_DO( read_protection_reg(adr) );
-  unprotectet_sector(adr);
-  DEBUG_FPRINT(("--after uprotect_sector:\n"));
-  // polling 
-  wait_for_rdy();
-  while(read_protection_reg(adr) != SECTOR_UNPROTECTED);
-
-  DEBUG_FPRINT(("--befor write_enable for write_bytes:\n"));
-  DEBUG_DO( read_status_reg() );
-  write_enable();
-  DEBUG_FPRINT(("--after write_enable:\n"));
-  DEBUG_DO( read_status_reg() );
-  DEBUG_FPRINT(("--befor OPCODE_BYTE_PAGE_PROGRAM cmd:\n"));
-  assert_mem_work(); DEBUG_FPRINT(("~CS set hi\n"));
-  write_byte(OPCODE_BYTE_PAGE_PROGRAM); 
-  DEBUG_FPRINT(("send opcode:%02x\n", OPCODE_BYTE_PAGE_PROGRAM));
-  send_adr(adr);
-  DEBUG_FPRINT(("send ADR:%06x\n", adr));
-  for(i=0;i<nbytes;i++){
-    write_byte(buff[i]);
+  switch(mem_select){                                
+    case(ORIGINAL): GPIOB->BSRRL = GPIO_Pin_9; break;
+    case(WORK)    : GPIOG->BSRRL = GPIO_Pin_6; break;
   }
-  DEBUG_FPRINT(("write %d bytes into mem\n", nbytes));
-  deassert_mem_work(); DEBUG_FPRINT(("~CS set lo\n"));
-  DEBUG_FPRINT(("--after OPCODE_BYTE_PAGE_PROGRAM cmds:\n"));
-  //polling
-  DEBUG_DO( read_status_reg() );
-  wait_for_rdy();
-  DEBUG_DO( read_status_reg() );
-  DEBUG_DO( read_protection_reg(adr) );
-  
-  DEBUG_FPRINT(("END-------------------------------------WRITE-\n"));
+  while(i<10){i++;} // wait to be sure
 }
 
-void spi_read(uint32_t adr, uint8_t *buff, uint32_t nbytes)
+uint8_t read_byte (void)
 {
-  int i = 0;
-	DEBUG_FPRINT(("-----------------------------------------READ-\n"));
-  DEBUG_FPRINT(("--befor write_enable for OPCODE_READ_ARRAY_SLOW:\n"));
-  DEBUG_DO( read_status_reg() );
-  write_enable();
-  DEBUG_FPRINT(("--after write_enable:\n"));
-  DEBUG_DO( read_status_reg() );
-  DEBUG_FPRINT(("--befor OPCODE_READ_ARRAY_SLOW cmds:\n"));
-  assert_mem_work(); DEBUG_FPRINT(("~CS set hi\n"));
-  write_byte(OPCODE_READ_ARRAY_SLOW); 
-  DEBUG_FPRINT(("send opcode:%02x\n",OPCODE_READ_ARRAY_SLOW));
-  send_adr(adr);
-  DEBUG_FPRINT(("send ADR:%06x\n", adr));
-  for(i=0;i<nbytes;i++){
-    buff[i] = read_byte();
-  }
-  DEBUG_FPRINT(("write %d bytes into mem\n", nbytes));
-  deassert_mem_work(); DEBUG_FPRINT(("~CS set lo\n"));
-  DEBUG_FPRINT(("--after OPCODE_READ_ARRAY_SLOW cmds:\n"));
-  //no polling reqired
-  DEBUG_DO( read_status_reg() );
-  DEBUG_DO( read_protection_reg(adr) );
-  
-  DEBUG_FPRINT(("END--------------------------------------READ-\n"));
+  SPI3->DR = 0x0;
+  while((SPI3->SR & SPI_SR_RXNE) != SPI_SR_RXNE){}; // polling Receive buffer not empty is unset
+  return SPI3->DR; 
 }
 
-
-void deassert_mem_original(void)
+uint8_t write_byte (uint8_t data)
 {
-  int i = 0;
-  GPIOB->BSRRL = GPIO_PIN_9;
-  while(i<10){i++;}
-}
-
-void assert_mem_work(void)
-{
-  int i = 0;
-  GPIOG->BSRRH = GPIO_PIN_6;
-  while(i<10){i++;}  // waiting for CS to get set
-}
-
-void deassert_mem_work(void)
-{
-  int i = 0;
-  GPIOG->BSRRL = GPIO_PIN_6;
-  while(i<10){i++;}
-}
-
-void assert_mem_original(void)
-{
-  int i = 0;
-  GPIOB->BSRRL = GPIO_PIN_9;
-  while(i<10){i++;}
-}
-
-void write_enable(void) // SPI->SR does not have an WE flag, so wie wait all on work with assert and deassert
-{
-  assert_mem_work();
-  write_byte(OPCODE_WRITE_ENABLE);
-  deassert_mem_work();
-}
-
-void protectet_sector(uint32_t adr)
-{
-  assert_mem_work();
-  write_byte(OPCODE_PROTECT_SECTOR);
-  send_adr(adr);
-  deassert_mem_work();
-}
-
-void unprotectet_sector(uint32_t adr)
-{
-  assert_mem_work();
-  write_byte(OPCODE_UNPROTECT_SECTOR);
-  send_adr(adr);
-  deassert_mem_work();
+  SPI3->DR = data;
+  while((SPI3->SR & SPI_SR_RXNE) != SPI_SR_RXNE){}; // polling Receive buffer not empty is unset
+  return SPI3->DR;    
 }
 
 void send_adr(uint32_t adr)
 {
-   write_byte(BYTE_N_OF_NUMBER(2,adr));
-   write_byte(BYTE_N_OF_NUMBER(1,adr));
-   write_byte(BYTE_N_OF_NUMBER(0,adr));
-}
-
-int8_t write_byte (uint8_t data)
-{
-  SPI3->DR = data;
-  while(!(SPI3->SR & SPI_SR_RXNE)); // polling Receive buffer not empty is unset
-  return SPI3->DR;    
-}
-
-
-int8_t read_byte (void)
-{
-  SPI3->DR = 0x0;
-  while(!(SPI3->SR & SPI_SR_RXNE)); // polling Receive buffer not empty is unset
-  return SPI3->DR; 
-}
-
- 
-uint8_t read_protection_reg(uint32_t adr) // see Amtel manual (page 27)
-{
-  uint8_t buff;
-  assert();
-  write_byte(OPCODE_SECTOR_PROTECTION_REGISTERS);
-  send_address(adr);
-  //read_byte();read_byte(); // two dummy // is that nessessary?
-  buff = read_byte();
-  deassert();
-  DEBUG_FPRINT(("Protection_reg: %02x of ADR: %06x\n",buff,adr));
-  return buff;
+  write_byte((uint8_t)(adr>>(2*N)));
+  write_byte((uint8_t)(adr>>(1*N)));
+  write_byte((uint8_t)(adr>>(0*N)));
 }
 
 uint16_t read_status_reg(void) // see Amtl manual cap 11.1 (page 39) retunr [15:8](SRT2) [7:0] (SRT1)
 {
   uint16_t buff = 0x0;
-  assert_mem_work();
+  assert_mem();
   write_byte(OPCODE_READ_STATUS_REGISTER);
-  buff |= read_byte();      // status register byte 1
+  read_byte();      // status register byte 1 just ignore it
   buff |= (read_byte()<<8); // status register byte 2
   buff |= read_byte();      // status register byte 1 again
-  deassert_mem_work();
-  DEBUG_FPRINT(("Status_reg (byte2 :SRT2 & byte1: SRT1):%04x \n", buff));
+  deassert_mem();
+  //DEBUG_FPRINT(("Status_reg (byte2 :SRT2 & byte1: SRT1):%04x \n", buff));
   return buff;
 }
 
+void write_enable(void) // SPI->SR does not have an WE flag, so wie wait all on work with assert and deassert
+{
+  assert_mem();
+  write_byte(OPCODE_WRITE_ENABLE);
+  deassert_mem();
+  while ((read_status_reg() & SRT1_WEL ) != SRT1_WEL){} // pollin WEL if 1 -> Write enabled 
+}
+
+void wait_for_rdy(void) // see script of Prof Schwarz: Flash Memory (page 41)
+{
+  while ((read_status_reg() & SRT1_RDY_BSY) == SRT1_RDY_BSY){} // if 1 -> Busy
+}
+
+uint8_t read_protection_reg(uint32_t adr) // see Amtel manual (page 27) // for debug purpose
+{
+  uint8_t buff;
+  assert_mem();
+  write_byte(OPCODE_READ_SECTOR_PROTECTION_REGISTERS);
+  send_adr(adr);
+  read_byte();read_byte(); // two dummy to get the correct output
+  buff = read_byte();
+  //DEBUG_FPRINT(("Protection_reg: %02x of ADR: %06x\n",buff,adr));
+  deassert_mem();
+  return buff;
+}
+
+void unprotectet_sector(uint32_t adr)
+{
+  write_enable();
+  assert_mem();
+  write_byte(OPCODE_UNPROTECTET_SECTOR);
+  send_adr(adr);
+  deassert_mem();
+  // wait_for_rdy(); // is this nessessary?
+  // polling if this is done 
+  assert_mem();
+  write_byte(OPCODE_READ_SECTOR_PROTECTION_REGISTERS);
+  send_adr(adr);
+  read_byte();read_byte(); // two dummy to get the correct output
+  while(read_byte() != SECTOR_UNPROTECTED){}; // polling statusreg
+  deassert_mem();
+}
 
 
-void print_manu_id(void){
-  
+// public fcts definition
+uint32_t read_device_id(void) // byte array is MSB( [31:24]=extendedDevice_info | [23:16]=DeviceID2 | [15:8]=DeviceID1 | [7:0]=ManuID  )LSB
+{
+  uint32_t buff = 0;
+	assert_mem();
+  write_byte(OPCODE_READ_MANUFACTURE_AND_DEVICE_ID);
+  buff |= (read_byte()<<(8*0));
+  buff |= (read_byte()<<(8*1));
+  buff |= (read_byte()<<(8*2));
+  buff |= (read_byte()<<(8*3));
+  deassert_mem();
+	DEBUG_FPRINT(("device id %x\n",buff));
+  return buff;
+}
+
+void erase_block_4kb(uint32_t adr)
+{
+  DEBUG_FPRINT(("------------------------------ERASE BLOCK 4Kb-\n"));
+  DEBUG_FPRINT(("ADR: %6X\n",adr));
+  DEBUG_FPRINT(("Befor unprotectet_sector Protectionreg: %4X\n", read_protection_reg(adr)));
+  unprotectet_sector(adr);	// inside write enable + unprotect sector + polling
+  DEBUG_FPRINT(("After unprotectet_sector Protectionreg: %4X\n", read_protection_reg(adr)));
+	DEBUG_FPRINT(("befor WE Statusreg: %4X\n", read_status_reg()));
+  write_enable(); 
+  DEBUG_FPRINT(("after WE Statusreg: %4X\n", read_status_reg()));
+  assert_mem();
+  write_byte(OPCODE_BLOCK_ERASE_4KB); 	
+  send_adr(adr);
+	deassert_mem();
+  DEBUG_FPRINT(("after deassert Statusreg: %4X\n", read_status_reg()));
+  wait_for_rdy();   //polling
+  DEBUG_FPRINT(("END Statusreg: %4X\n", read_status_reg()));
+  DEBUG_FPRINT(("END---------------------------ERASE BLOCK 4Kb-\n"));
+}
+
+void program_page(uint32_t adr, uint8_t *buff, uint32_t nbyte)
+{
+  int i=0;
+  DEBUG_FPRINT(("---------------------------------PROGRAM PAGE-\n"));
+  DEBUG_FPRINT(("ADR: %6X, buff %8X, nbyte %8X\n",adr, buff, nbyte));
+  DEBUG_FPRINT(("Befor unprotectet_sector Protectionreg: %4X\n", read_protection_reg(adr)));
+  //unprotectet_sector(adr);  // inside write enable + unprotect sector + polling
+  //DEBUG_FPRINT(("After unprotectet_sector Protectionreg: %4X\n", read_protection_reg(adr)));
+  DEBUG_FPRINT(("befor WE Statusreg: %4X\n", read_status_reg()));
+  write_enable(); 
+  DEBUG_FPRINT(("after WE Statusreg: %4X\n", read_status_reg()));
+  assert_mem();
+  write_byte(OPCODE_BYTE_PAGE_PROGRAM); 
+  send_adr(adr);
+  for(i=0;i<nbytes;i++){
+    write_byte(buff[i]);
+  }
+  deassert_mem();
+  DEBUG_FPRINT(("after deassert Statusreg: %4X\n", read_status_reg()));
+  wait_for_rdy(); // polling
+  DEBUG_FPRINT(("END Statusreg: %4X\n", read_status_reg()));
+  DEBUG_FPRINT(("END------------------------------PROGRAM PAGE-\n"));
+}
+
+void read_array(uint32_t adr, uint8_t *buff, uint32_t nbyte)
+{
+  DEBUG_FPRINT(("-----------------------------------READ ARRAY-\n")); 
+  DEBUG_FPRINT(("ADR: %6X, buff %8X, nbyte %8X\n",adr, buff, nbyte));
+  DEBUG_FPRINT(("befor assert Statusreg: %4X\n", read_status_reg()));
+  assert_mem();
+  write_byte(OPCODE_READ_ARRAY_SLOW); 
+  send_adr(adr);
+  for(i=0;i<nbytes;i++){
+    buff[i] = read_byte();
+  }
+  deassert_mem();
+  DEBUG_FPRINT(("after deassert Statusreg: %4X\n", read_status_reg()));
+  wait_for_rdy(); // polling
+  DEBUG_FPRINT(("END Statusreg: %4X\n", read_status_reg()));
+  DEBUG_FPRINT(("END--------------------------------READ ARRAY-\n"));
 }
